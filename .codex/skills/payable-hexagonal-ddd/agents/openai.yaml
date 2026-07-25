@@ -1,0 +1,7 @@
+interface:
+  display_name: "Arquitetura Hexagonal DDD"
+  short_description: "Guia de DDD e testes por camada"
+  default_prompt: "Use $payable-hexagonal-ddd para implementar ou revisar uma feature e seus testes neste projeto."
+
+policy:
+  allow_implicit_invocation: true

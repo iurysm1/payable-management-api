@@ -8,6 +8,7 @@ import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,6 +42,14 @@ class PayableServiceTest {
     @InjectMocks
     private PayableService payableService;
 
+    private Payable defaultPayable;
+
+    @BeforeEach
+    void setUp() {
+        defaultPayable = payable(1L);
+        when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(defaultPayable));
+    }
+
     @Test
     void shouldListPayables() {
         var pageable = PageRequest.of(0, 10);
@@ -55,12 +64,9 @@ class PayableServiceTest {
 
     @Test
     void shouldFindPayableById() {
-        Payable payable = payable(1L);
-        when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(payable));
-
         Payable result = payableService.findById(1L);
 
-        assertThat(result).isSameAs(payable);
+        assertThat(result).isSameAs(defaultPayable);
     }
 
     @Test
@@ -90,7 +96,6 @@ class PayableServiceTest {
 
     @Test
     void shouldUpdateExistingPayable() {
-        Payable existingPayable = payable(1L);
         PayableDto updatedValues = new PayableDto(
                 1L,
                 "Aluguel atualizado",
@@ -101,16 +106,15 @@ class PayableServiceTest {
                 2L
         );
         Supplier supplier = supplier(2L, "Novo fornecedor");
-        when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(existingPayable));
         when(supplierPersistencePort.findById(2L)).thenReturn(Optional.of(supplier));
-        when(payablePersistencePort.save(existingPayable)).thenReturn(existingPayable);
+        when(payablePersistencePort.save(defaultPayable)).thenReturn(defaultPayable);
 
         Payable result = payableService.update(updatedValues);
 
         assertThat(result.getDescription()).isEqualTo("Aluguel atualizado");
         assertThat(result.getAmount()).isEqualByComparingTo("250.00");
         assertThat(result.getSupplier()).isSameAs(supplier);
-        verify(payablePersistencePort).save(existingPayable);
+        verify(payablePersistencePort).save(defaultPayable);
     }
 
     @Test
@@ -134,12 +138,9 @@ class PayableServiceTest {
 
     @Test
     void shouldDeleteExistingPayable() {
-        Payable payable = payable(1L);
-        when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(payable));
-
         payableService.delete(1L);
 
-        verify(payablePersistencePort).delete(payable);
+        verify(payablePersistencePort).delete(defaultPayable);
     }
 
     private Payable payable(Long id) {

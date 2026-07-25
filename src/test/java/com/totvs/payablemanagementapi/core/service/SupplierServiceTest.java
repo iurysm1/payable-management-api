@@ -6,6 +6,7 @@ import com.totvs.payablemanagementapi.core.port.input.dto.SupplierDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Supplier;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -38,6 +39,14 @@ class SupplierServiceTest {
     @InjectMocks
     private SupplierService supplierService;
 
+    private Supplier defaultSupplier;
+
+    @BeforeEach
+    void setUp() {
+        defaultSupplier = supplier(1L, "TOTVS");
+        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(defaultSupplier));
+    }
+
     @Test
     void shouldListSuppliers() {
         var pageable = PageRequest.of(0, 10);
@@ -52,12 +61,9 @@ class SupplierServiceTest {
 
     @Test
     void shouldFindSupplierById() {
-        Supplier supplier = supplier(1L, "TOTVS");
-        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(supplier));
-
         Supplier result = supplierService.findById(1L);
 
-        assertThat(result).isSameAs(supplier);
+        assertThat(result).isSameAs(defaultSupplier);
     }
 
     @Test
@@ -86,39 +92,33 @@ class SupplierServiceTest {
 
     @Test
     void shouldUpdateExistingSupplier() {
-        Supplier existingSupplier = supplier(1L, "Nome antigo");
         SupplierDto updatedValues = supplierDto(1L, "Nome atualizado");
-        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(existingSupplier));
-        when(supplierPersistencePort.save(existingSupplier)).thenReturn(existingSupplier);
+        when(supplierPersistencePort.save(defaultSupplier)).thenReturn(defaultSupplier);
 
         Supplier result = supplierService.update(updatedValues);
 
         assertThat(result.getName()).isEqualTo("Nome atualizado");
-        verify(supplierPersistencePort).save(existingSupplier);
+        verify(supplierPersistencePort).save(defaultSupplier);
     }
 
     @Test
     void shouldDeleteSupplierWithoutPayables() {
-        Supplier supplier = supplier(1L, "TOTVS");
-        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(supplier));
         when(payablePersistencePort.existsBySupplierId(1L)).thenReturn(false);
 
         supplierService.delete(1L);
 
-        verify(supplierPersistencePort).delete(supplier);
+        verify(supplierPersistencePort).delete(defaultSupplier);
     }
 
     @Test
     void shouldBlockDeletionOfSupplierWithPayables() {
-        Supplier supplier = supplier(1L, "TOTVS");
-        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(supplier));
         when(payablePersistencePort.existsBySupplierId(1L)).thenReturn(true);
 
         assertThatThrownBy(() -> supplierService.delete(1L))
                 .isInstanceOf(SupplierInUseException.class)
                 .hasMessage("Fornecedor com id 1 possui contas a pagar vinculadas");
 
-        verify(supplierPersistencePort, never()).delete(supplier);
+        verify(supplierPersistencePort, never()).delete(defaultSupplier);
     }
 
     private Supplier supplier(Long id, String name) {
