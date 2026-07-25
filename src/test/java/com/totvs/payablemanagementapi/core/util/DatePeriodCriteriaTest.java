@@ -29,6 +29,11 @@ class DatePeriodCriteriaTest {
     }
 
     @Test
+    void shouldAcceptPeriodWithoutDates() {
+        assertThatCode(() -> new DatePeriodCriteria(null, null)).doesNotThrowAnyException();
+    }
+
+    @Test
     void shouldRejectPeriodWithStartDateAfterEndDate() {
         assertInvalidPeriod(LocalDate.of(2026, 8, 11), LocalDate.of(2026, 8, 10));
     }

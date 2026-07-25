@@ -10,6 +10,7 @@ import com.totvs.payablemanagementapi.core.util.DatePeriodCriteria;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
+import com.totvs.payablemanagementapi.domain.exception.InvalidPayableException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,12 +62,12 @@ class PayableServiceTest {
                 new DatePeriodCriteria(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31))
         );
         Page<Payable> page = new PageImpl<>(List.of(payable(1L)), pageable, 1);
-        when(payablePersistencePort.findAll(pageable)).thenReturn(page);
+        when(payablePersistencePort.findAll(pageable, filter)).thenReturn(page);
 
         Page<Payable> result = payableService.list(pageable, filter);
 
         assertThat(result).isSameAs(page);
-        verify(payablePersistencePort).findAll(pageable);
+        verify(payablePersistencePort).findAll(pageable, filter);
     }
 
     @Test
@@ -84,6 +86,15 @@ class PayableServiceTest {
         assertThatThrownBy(() -> payableService.findById(99L))
                 .isInstanceOf(PayableNotFoundException.class)
                 .hasMessage("Conta a pagar com id 99 não encontrada");
+    }
+
+    @Test
+    void shouldRejectNullIdWhenFindingPayable() {
+        assertThatThrownBy(() -> payableService.findById(null))
+                .isInstanceOf(InvalidPayableException.class)
+                .hasMessage("O id da conta a pagar é obrigatório");
+
+        verifyNoInteractions(payablePersistencePort);
     }
 
     @Test

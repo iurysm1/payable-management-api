@@ -1,6 +1,7 @@
 package com.totvs.payablemanagementapi.domain;
 
 
+import com.totvs.payablemanagementapi.domain.exception.InvalidSupplierException;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,4 +22,21 @@ public class Supplier {
 
     @NotBlank
     private String name;
+
+    public static Supplier create(String name) {
+        Supplier supplier = new Supplier(null, name);
+        supplier.validate();
+        return supplier;
+    }
+
+    public void updateDetails(String name) {
+        this.name = name;
+        validate();
+    }
+
+    public void validate() {
+        if (name == null || name.isBlank()) {
+            throw new InvalidSupplierException("O nome do fornecedor é obrigatório");
+        }
+    }
 }

@@ -24,11 +24,15 @@ public class PayableService implements PayableUseCase {
 
     @Override
     public Page<Payable> list(Pageable pageable, PayableFilterDto filter) {
-        return payablePersistencePort.findAll(pageable);
+        return payablePersistencePort.findAll(pageable, filter);
     }
 
     @Override
     public Payable findById(Long id) {
+        if (id == null) {
+            throw new InvalidPayableException("O id da conta a pagar é obrigatório");
+        }
+
         return payablePersistencePort.findById(id)
                 .orElseThrow(() -> new PayableNotFoundException(id));
     }

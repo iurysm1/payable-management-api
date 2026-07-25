@@ -6,6 +6,7 @@ import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.SupplierUseCase;
 import com.totvs.payablemanagementapi.core.port.input.dto.SupplierDto;
 import com.totvs.payablemanagementapi.domain.Supplier;
+import com.totvs.payablemanagementapi.domain.exception.InvalidSupplierException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +70,18 @@ class SuppliersControllerTest {
         mockMvc.perform(get("/supplier/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Fornecedor com id 99 não encontrado"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenSupplierViolatesDomainRule() throws Exception {
+        when(supplierUseCase.save(any(SupplierDto.class)))
+                .thenThrow(new InvalidSupplierException("O nome do fornecedor é obrigatório"));
+
+        mockMvc.perform(post("/supplier")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(supplierDto(null, "TOTVS"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("O nome do fornecedor é obrigatório"));
     }
 
     @Test

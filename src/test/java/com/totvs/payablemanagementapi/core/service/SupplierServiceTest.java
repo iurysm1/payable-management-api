@@ -6,6 +6,7 @@ import com.totvs.payablemanagementapi.core.port.input.dto.SupplierDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Supplier;
+import com.totvs.payablemanagementapi.domain.exception.InvalidSupplierException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -74,6 +76,15 @@ class SupplierServiceTest {
         assertThatThrownBy(() -> supplierService.findById(99L))
                 .isInstanceOf(SupplierNotFoundException.class)
                 .hasMessage("Fornecedor com id 99 não encontrado");
+    }
+
+    @Test
+    void shouldRejectNullIdWhenFindingSupplier() {
+        assertThatThrownBy(() -> supplierService.findById(null))
+                .isInstanceOf(InvalidSupplierException.class)
+                .hasMessage("O id do fornecedor é obrigatório");
+
+        verifyNoInteractions(supplierPersistencePort);
     }
 
     @Test

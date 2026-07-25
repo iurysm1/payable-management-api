@@ -1,12 +1,12 @@
 package com.totvs.payablemanagementapi.adapter.output.repository;
 
+import com.totvs.payablemanagementapi.core.port.input.dto.PayableFilterDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
 import com.totvs.payablemanagementapi.domain.Payable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-
 
 import java.util.Optional;
 
@@ -17,8 +17,13 @@ public class PayableJpaAdapter implements PayablePersistencePort {
     private final PayableRepository payableRepository;
 
     @Override
-    public Page<Payable> findAll(Pageable pageable) {
-        return payableRepository.findAll(pageable);
+    public Page<Payable> findAll(Pageable pageable, PayableFilterDto filter) {
+        return payableRepository.findAllByFilters(
+                filter.description(),
+                filter.periodCriteria().startDate(),
+                filter.periodCriteria().endDate(),
+                pageable
+        );
     }
 
     @Override

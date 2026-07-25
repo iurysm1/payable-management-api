@@ -4,20 +4,13 @@ import com.totvs.payablemanagementapi.core.exception.InvalidDatePeriodCriteriaEx
 
 import java.time.LocalDate;
 
-public class DatePeriodCriteria {
-    private final LocalDate startDate;
-    private final LocalDate endDate;
+public record DatePeriodCriteria(LocalDate startDate, LocalDate endDate) {
 
-    public DatePeriodCriteria(LocalDate startDate, LocalDate endDate) {
+    public DatePeriodCriteria {
+        boolean onlyOneDateWasInformed = (startDate == null) != (endDate == null);
 
-        this.startDate = startDate;
-        this.endDate = endDate;
-        isValidPeriodCriteria(startDate, endDate);
-    }
-
-    public void isValidPeriodCriteria(LocalDate startDate, LocalDate endDate) {
-
-        if(startDate == null || endDate == null || startDate.isAfter(endDate)){
+        if (onlyOneDateWasInformed
+                || (startDate != null && startDate.isAfter(endDate))) {
             throw new InvalidDatePeriodCriteriaException();
         }
     }

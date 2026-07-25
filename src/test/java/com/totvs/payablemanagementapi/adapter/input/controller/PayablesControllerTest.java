@@ -5,6 +5,7 @@ import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableFilterDto;
+import com.totvs.payablemanagementapi.core.util.DatePeriodCriteria;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
@@ -14,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
@@ -68,6 +70,19 @@ class PayablesControllerTest {
         ArgumentCaptor<PayableFilterDto> captor = ArgumentCaptor.forClass(PayableFilterDto.class);
         verify(payableUseCase).list(any(), captor.capture());
         assertThat(captor.getValue().description()).isEqualTo("Aluguel");
+    }
+
+    @Test
+    void shouldListPayablesWithoutDatePeriod() throws Exception {
+        when(payableUseCase.list(any(), any())).thenReturn(Page.empty());
+
+        mockMvc.perform(get("/payable"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<PayableFilterDto> captor = ArgumentCaptor.forClass(PayableFilterDto.class);
+        verify(payableUseCase).list(any(), captor.capture());
+        assertThat(captor.getValue().periodCriteria())
+                .isEqualTo(new DatePeriodCriteria(null, null));
     }
 
     @Test

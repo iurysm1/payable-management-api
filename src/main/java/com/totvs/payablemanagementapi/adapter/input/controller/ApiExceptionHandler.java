@@ -5,6 +5,7 @@ import com.totvs.payablemanagementapi.core.exception.InvalidDatePeriodCriteriaEx
 import com.totvs.payablemanagementapi.core.exception.SupplierInUseException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.domain.exception.InvalidPayableException;
+import com.totvs.payablemanagementapi.domain.exception.InvalidSupplierException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -25,8 +26,8 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
     }
 
-    @ExceptionHandler(InvalidPayableException.class)
-    public ProblemDetail handleInvalidPayable(InvalidPayableException exception) {
+    @ExceptionHandler({InvalidPayableException.class, InvalidSupplierException.class})
+    public ProblemDetail handleInvalidDomainData(RuntimeException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 

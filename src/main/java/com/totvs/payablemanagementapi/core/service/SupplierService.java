@@ -7,6 +7,7 @@ import com.totvs.payablemanagementapi.core.port.input.dto.SupplierDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Supplier;
+import com.totvs.payablemanagementapi.domain.exception.InvalidSupplierException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,20 +27,24 @@ public class SupplierService implements SupplierUseCase {
 
     @Override
     public Supplier findById(Long id) {
+        if (id == null) {
+            throw new InvalidSupplierException("O id do fornecedor é obrigatório");
+        }
+
         return supplierPersistencePort.findById(id)
                 .orElseThrow(() -> new SupplierNotFoundException(id));
     }
 
     @Override
     public Supplier save(SupplierDto supplierDto) {
-        Supplier supplier = new Supplier(null, supplierDto.name());
+        Supplier supplier = Supplier.create(supplierDto.name());
         return supplierPersistencePort.save(supplier);
     }
 
     @Override
     public Supplier update(SupplierDto supplierDto) {
         Supplier existingSupplier = findById(supplierDto.id());
-        existingSupplier.setName(supplierDto.name());
+        existingSupplier.updateDetails(supplierDto.name());
 
         return supplierPersistencePort.save(existingSupplier);
     }

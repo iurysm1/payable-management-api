@@ -27,13 +27,11 @@ public class PayablesController {
     @GetMapping
     public ResponseEntity<Page<Payable>> list(
             @RequestParam(required = false) String description,
-            @RequestParam() LocalDate startDate,
-            @RequestParam() LocalDate endDate,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
             Pageable pageable
     ) {
-        DatePeriodCriteria periodCriteria = new DatePeriodCriteria(
-                startDate, endDate
-        );
+        DatePeriodCriteria periodCriteria = new DatePeriodCriteria(startDate, endDate);
         PayableFilterDto filter = new PayableFilterDto(description,periodCriteria);
 
         return ResponseEntity.ok(payableUseCase.list(pageable, filter));
