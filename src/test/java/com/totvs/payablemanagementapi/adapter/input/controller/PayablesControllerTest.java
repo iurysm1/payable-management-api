@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
+import com.totvs.payablemanagementapi.core.port.input.dto.PayableFilterDto;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
@@ -26,9 +27,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,19 +53,57 @@ class PayablesControllerTest {
     @Test
     void shouldListPayables() throws Exception {
         Payable payable = payable(1L);
-        when(payableUseCase.list(any())).thenReturn(new PageImpl<>(List.of(payable), PageRequest.of(0, 10), 1));
+        when(payableUseCase.list(any(), any())).thenReturn(new PageImpl<>(List.of(payable), PageRequest.of(0, 10), 1));
 
-        mockMvc.perform(get("/payables").param("page", "0").param("size", "10"))
+        mockMvc.perform(get("/payable")
+                        .param("description", "Aluguel")
+                        .param("startDate", "2026-08-01")
+                        .param("endDate", "2026-08-31")
+                        .param("page", "0")
+                        .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1))
                 .andExpect(jsonPath("$.content[0].description").value("Aluguel"));
+
+        ArgumentCaptor<PayableFilterDto> captor = ArgumentCaptor.forClass(PayableFilterDto.class);
+        verify(payableUseCase).list(any(), captor.capture());
+        assertThat(captor.getValue().description()).isEqualTo("Aluguel");
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenStartDateIsAfterEndDate() throws Exception {
+        mockMvc.perform(get("/payable")
+                        .param("startDate", "2026-08-31")
+                        .param("endDate", "2026-08-01"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(
+                        "O período de datas deve possuir data inicial e final, e a data inicial não pode ser posterior à data final"
+                ));
+
+        verifyNoInteractions(payableUseCase);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenStartDateIsMissing() throws Exception {
+        mockMvc.perform(get("/payable").param("endDate", "2026-08-31"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(payableUseCase);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenEndDateIsMissing() throws Exception {
+        mockMvc.perform(get("/payable").param("startDate", "2026-08-01"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(payableUseCase);
     }
 
     @Test
     void shouldFindPayableById() throws Exception {
         when(payableUseCase.findById(1L)).thenReturn(payable(1L));
 
-        mockMvc.perform(get("/payables/1"))
+        mockMvc.perform(get("/payable/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1));
     }
@@ -71,7 +112,7 @@ class PayablesControllerTest {
     void shouldReturnNotFoundWhenPayableDoesNotExist() throws Exception {
         when(payableUseCase.findById(99L)).thenThrow(new PayableNotFoundException(99L));
 
-        mockMvc.perform(get("/payables/99"))
+        mockMvc.perform(get("/payable/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Conta a pagar com id 99 não encontrada"));
     }
@@ -81,7 +122,7 @@ class PayablesControllerTest {
         when(payableUseCase.save(any(PayableDto.class)))
                 .thenThrow(new InvalidPayableException("O valor da conta a pagar não pode ser negativo"));
 
-        mockMvc.perform(post("/payables")
+        mockMvc.perform(post("/payable")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payableDto(null, 1L))))
                 .andExpect(status().isBadRequest())
@@ -92,7 +133,7 @@ class PayablesControllerTest {
     void shouldCreatePayable() throws Exception {
         when(payableUseCase.save(any(PayableDto.class))).thenReturn(payable(1L));
 
-        mockMvc.perform(post("/payables")
+        mockMvc.perform(post("/payable")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payableDto(null, 1L))))
                 .andExpect(status().isCreated())
@@ -113,7 +154,7 @@ class PayablesControllerTest {
         when(payableUseCase.save(any(PayableDto.class)))
                 .thenThrow(new InvalidPayableException("O valor da conta a pagar é obrigatório"));
 
-        mockMvc.perform(post("/payables")
+        mockMvc.perform(post("/payable")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payableDto)))
                 .andExpect(status().isBadRequest());
@@ -124,7 +165,7 @@ class PayablesControllerTest {
         when(payableUseCase.save(any(PayableDto.class)))
                 .thenThrow(new InvalidPayableException("O fornecedor da conta a pagar é obrigatório"));
 
-        mockMvc.perform(post("/payables")
+        mockMvc.perform(post("/payable")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payableDto(null, null))))
                 .andExpect(status().isBadRequest())
@@ -137,7 +178,7 @@ class PayablesControllerTest {
         updatedPayable.setDescription("Aluguel atualizado");
         when(payableUseCase.update(any(PayableDto.class))).thenReturn(updatedPayable);
 
-        mockMvc.perform(put("/payables/1")
+        mockMvc.perform(put("/payable/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payableDto(99L, 1L))))
                 .andExpect(status().isOk())
@@ -151,10 +192,58 @@ class PayablesControllerTest {
 
     @Test
     void shouldDeletePayable() throws Exception {
-        mockMvc.perform(delete("/payables/1"))
+        mockMvc.perform(delete("/payable/1"))
                 .andExpect(status().isNoContent());
 
         verify(payableUseCase).delete(1L);
+    }
+
+    @Test
+    void shouldUpdatePayableStatus() throws Exception {
+        Payable updatedPayable = payable(1L);
+        updatedPayable.setStatus(StatusPayableEnum.PAGO);
+        when(payableUseCase.updateStatus(1L, StatusPayableEnum.PAGO)).thenReturn(updatedPayable);
+
+        mockMvc.perform(patch("/payable/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\": 1}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PAGO"));
+
+        verify(payableUseCase).updateStatus(1L, StatusPayableEnum.PAGO);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenStatusIsMissing() throws Exception {
+        mockMvc.perform(patch("/payable/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("O status da conta a pagar é obrigatório"));
+
+        verifyNoInteractions(payableUseCase);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenStatusIsNull() throws Exception {
+        mockMvc.perform(patch("/payable/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\": null}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("O status da conta a pagar é obrigatório"));
+
+        verifyNoInteractions(payableUseCase);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenStatusCodeDoesNotExist() throws Exception {
+        mockMvc.perform(patch("/payable/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\": 99}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Código de status de conta a pagar inválido: 99"));
+
+        verifyNoInteractions(payableUseCase);
     }
 
     private Payable payable(Long id) {

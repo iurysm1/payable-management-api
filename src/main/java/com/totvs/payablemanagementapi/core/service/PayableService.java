@@ -4,10 +4,12 @@ import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
+import com.totvs.payablemanagementapi.core.port.input.dto.PayableFilterDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
+import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
 import com.totvs.payablemanagementapi.domain.exception.InvalidPayableException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,7 +23,7 @@ public class PayableService implements PayableUseCase {
     private final SupplierPersistencePort supplierPersistencePort;
 
     @Override
-    public Page<Payable> list(Pageable pageable) {
+    public Page<Payable> list(Pageable pageable, PayableFilterDto filter) {
         return payablePersistencePort.findAll(pageable);
     }
 
@@ -71,6 +73,22 @@ public class PayableService implements PayableUseCase {
     public void delete(Long id) {
         Payable payable = findById(id);
         payablePersistencePort.delete(payable);
+    }
+
+    @Override
+    public Payable updateStatus(Long id, StatusPayableEnum status) {
+        if (id == null) {
+            throw new InvalidPayableException("O id da conta a pagar é obrigatório");
+        }
+
+        Payable payable = findById(id);
+
+        if (payable.getStatus().equals(status)) {
+            return payable;
+        }
+
+        payable.updateStatus(status);
+        return payablePersistencePort.save(payable);
     }
 
     private Supplier resolveSupplier(Long supplierId) {

@@ -47,7 +47,7 @@ class SuppliersControllerTest {
     void shouldListSuppliers() throws Exception {
         when(supplierUseCase.list(any())).thenReturn(new PageImpl<>(List.of(supplier(1L, "TOTVS")), PageRequest.of(0, 10), 1));
 
-        mockMvc.perform(get("/suppliers").param("page", "0").param("size", "10"))
+        mockMvc.perform(get("/supplier").param("page", "0").param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1))
                 .andExpect(jsonPath("$.content[0].name").value("TOTVS"));
@@ -57,7 +57,7 @@ class SuppliersControllerTest {
     void shouldFindSupplierById() throws Exception {
         when(supplierUseCase.findById(1L)).thenReturn(supplier(1L, "TOTVS"));
 
-        mockMvc.perform(get("/suppliers/1"))
+        mockMvc.perform(get("/supplier/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("TOTVS"));
     }
@@ -66,7 +66,7 @@ class SuppliersControllerTest {
     void shouldReturnNotFoundWhenSupplierDoesNotExist() throws Exception {
         when(supplierUseCase.findById(99L)).thenThrow(new SupplierNotFoundException(99L));
 
-        mockMvc.perform(get("/suppliers/99"))
+        mockMvc.perform(get("/supplier/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Fornecedor com id 99 não encontrado"));
     }
@@ -75,7 +75,7 @@ class SuppliersControllerTest {
     void shouldCreateSupplier() throws Exception {
         when(supplierUseCase.save(any(SupplierDto.class))).thenReturn(supplier(1L, "TOTVS"));
 
-        mockMvc.perform(post("/suppliers")
+        mockMvc.perform(post("/supplier")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(supplierDto(null, "TOTVS"))))
                 .andExpect(status().isCreated())
@@ -84,7 +84,7 @@ class SuppliersControllerTest {
 
     @Test
     void shouldRejectSupplierWithoutName() throws Exception {
-        mockMvc.perform(post("/suppliers")
+        mockMvc.perform(post("/supplier")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -94,7 +94,7 @@ class SuppliersControllerTest {
     void shouldUpdateSupplierUsingIdFromPath() throws Exception {
         when(supplierUseCase.update(any(SupplierDto.class))).thenReturn(supplier(1L, "Nome atualizado"));
 
-        mockMvc.perform(put("/suppliers/1")
+        mockMvc.perform(put("/supplier/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(supplierDto(99L, "Nome atualizado"))))
                 .andExpect(status().isOk())
@@ -107,7 +107,7 @@ class SuppliersControllerTest {
 
     @Test
     void shouldDeleteSupplier() throws Exception {
-        mockMvc.perform(delete("/suppliers/1"))
+        mockMvc.perform(delete("/supplier/1"))
                 .andExpect(status().isNoContent());
 
         verify(supplierUseCase).delete(1L);
@@ -117,7 +117,7 @@ class SuppliersControllerTest {
     void shouldReturnConflictWhenSupplierHasPayables() throws Exception {
         org.mockito.Mockito.doThrow(new SupplierInUseException(1L)).when(supplierUseCase).delete(1L);
 
-        mockMvc.perform(delete("/suppliers/1"))
+        mockMvc.perform(delete("/supplier/1"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("Fornecedor com id 1 possui contas a pagar vinculadas"));
     }

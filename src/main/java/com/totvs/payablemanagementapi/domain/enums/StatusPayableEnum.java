@@ -13,6 +13,7 @@ public enum StatusPayableEnum {
     PAGO(1, "Conta paga"),
     CANCELADO(2, "Conta cancelada");
 
+
     private final int code;
     private final String description;
 

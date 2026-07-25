@@ -44,7 +44,6 @@ class SupplierServiceTest {
     @BeforeEach
     void setUp() {
         defaultSupplier = supplier(1L, "TOTVS");
-        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(defaultSupplier));
     }
 
     @Test
@@ -61,6 +60,8 @@ class SupplierServiceTest {
 
     @Test
     void shouldFindSupplierById() {
+        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(defaultSupplier));
+
         Supplier result = supplierService.findById(1L);
 
         assertThat(result).isSameAs(defaultSupplier);
@@ -93,6 +94,7 @@ class SupplierServiceTest {
     @Test
     void shouldUpdateExistingSupplier() {
         SupplierDto updatedValues = supplierDto(1L, "Nome atualizado");
+        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(defaultSupplier));
         when(supplierPersistencePort.save(defaultSupplier)).thenReturn(defaultSupplier);
 
         Supplier result = supplierService.update(updatedValues);
@@ -103,6 +105,7 @@ class SupplierServiceTest {
 
     @Test
     void shouldDeleteSupplierWithoutPayables() {
+        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(defaultSupplier));
         when(payablePersistencePort.existsBySupplierId(1L)).thenReturn(false);
 
         supplierService.delete(1L);
@@ -112,6 +115,7 @@ class SupplierServiceTest {
 
     @Test
     void shouldBlockDeletionOfSupplierWithPayables() {
+        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(defaultSupplier));
         when(payablePersistencePort.existsBySupplierId(1L)).thenReturn(true);
 
         assertThatThrownBy(() -> supplierService.delete(1L))

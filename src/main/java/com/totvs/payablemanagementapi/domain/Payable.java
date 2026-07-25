@@ -104,4 +104,14 @@ public class Payable {
 
         return payable;
     }
+
+    public void updateStatus(StatusPayableEnum status) {
+        if (status == null) {
+            throw new InvalidPayableException(
+                    "O status da conta a pagar é obrigatório"
+            );
+        }
+
+        this.status = status;
+    }
 }

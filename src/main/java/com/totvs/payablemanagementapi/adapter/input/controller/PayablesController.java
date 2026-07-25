@@ -2,7 +2,11 @@ package com.totvs.payablemanagementapi.adapter.input.controller;
 
 import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
+import com.totvs.payablemanagementapi.core.port.input.dto.PayableFilterDto;
+import com.totvs.payablemanagementapi.core.port.input.dto.UpdatePayableStatusDto;
+import com.totvs.payablemanagementapi.core.util.DatePeriodCriteria;
 import com.totvs.payablemanagementapi.domain.Payable;
+import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -10,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/payable")
@@ -19,8 +25,18 @@ public class PayablesController {
     private final PayableUseCase payableUseCase;
 
     @GetMapping
-    public ResponseEntity<Page<Payable>> list(Pageable pageable) {
-        return ResponseEntity.ok(payableUseCase.list(pageable));
+    public ResponseEntity<Page<Payable>> list(
+            @RequestParam(required = false) String description,
+            @RequestParam() LocalDate startDate,
+            @RequestParam() LocalDate endDate,
+            Pageable pageable
+    ) {
+        DatePeriodCriteria periodCriteria = new DatePeriodCriteria(
+                startDate, endDate
+        );
+        PayableFilterDto filter = new PayableFilterDto(description,periodCriteria);
+
+        return ResponseEntity.ok(payableUseCase.list(pageable, filter));
     }
 
     @GetMapping("/{id}")
@@ -53,5 +69,14 @@ public class PayablesController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         payableUseCase.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Payable> updateStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdatePayableStatusDto request
+    ) {
+        StatusPayableEnum statusEnum = StatusPayableEnum.fromCode(request.status());
+        return ResponseEntity.ok(payableUseCase.updateStatus(id, statusEnum));
     }
 }

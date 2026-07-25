@@ -1,11 +1,13 @@
 package com.totvs.payablemanagementapi.domain;
 
+import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
 import com.totvs.payablemanagementapi.domain.exception.InvalidPayableException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -56,6 +58,28 @@ class PayableTest {
                 "Aluguel", new BigDecimal("10.00"), null, null, null, null))
                 .isInstanceOf(InvalidPayableException.class)
                 .hasMessage("O fornecedor da conta a pagar é obrigatório");
+    }
+
+    @Test
+    void shouldUpdateStatus() {
+        Payable payable = Payable.create(
+                "Aluguel", new BigDecimal("10.00"), StatusPayableEnum.PENDENTE,
+                null, null, supplier());
+
+        payable.updateStatus(StatusPayableEnum.PAGO);
+
+        assertThat(payable.getStatus()).isEqualTo(StatusPayableEnum.PAGO);
+    }
+
+    @Test
+    void shouldRejectNullStatus() {
+        Payable payable = Payable.create(
+                "Aluguel", new BigDecimal("10.00"), StatusPayableEnum.PENDENTE,
+                null, null, supplier());
+
+        assertThatThrownBy(() -> payable.updateStatus(null))
+                .isInstanceOf(InvalidPayableException.class)
+                .hasMessage("O status da conta a pagar é obrigatório");
     }
 
     private Supplier supplier() {
