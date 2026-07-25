@@ -3,6 +3,7 @@ package com.totvs.payablemanagementapi.core.service;
 import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
+import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Payable;
@@ -31,24 +32,35 @@ public class PayableService implements PayableUseCase {
     }
 
     @Override
-    public Payable save(Payable payable) {
-        payable.validate();
-        payable.setSupplier(resolveSupplier(payable.getSupplier()));
+    public Payable save(PayableDto payableDto) {
+        Supplier supplier = resolveSupplier(payableDto.supplierId());
+        Payable payable = Payable.create(
+                payableDto.description(),
+                payableDto.amount(),
+                payableDto.status(),
+                payableDto.expirationDate(),
+                payableDto.paymentDate(),
+                supplier
+        );
 
         return payablePersistencePort.save(payable);
     }
 
     @Override
-    public Payable update(Payable payable) {
-        Payable existingPayable = findById(payable.getId());
+    public Payable update(PayableDto payableDto) {
+        if (payableDto.id() == null) {
+            throw new InvalidPayableException("O id da conta a pagar é obrigatório");
+        }
 
-        Supplier supplier = resolveSupplier(payable.getSupplier());
+        Payable existingPayable = findById(payableDto.id());
+
+        Supplier supplier = resolveSupplier(payableDto.supplierId());
         existingPayable.updateDetails(
-                payable.getDescription(),
-                payable.getAmount(),
-                payable.getStatus(),
-                payable.getExpirationDate(),
-                payable.getPaymentDate(),
+                payableDto.description(),
+                payableDto.amount(),
+                payableDto.status(),
+                payableDto.expirationDate(),
+                payableDto.paymentDate(),
                 supplier
         );
 
@@ -61,12 +73,12 @@ public class PayableService implements PayableUseCase {
         payablePersistencePort.delete(payable);
     }
 
-    private Supplier resolveSupplier(Supplier supplier) {
-        if (supplier == null || supplier.getId() == null) {
+    private Supplier resolveSupplier(Long supplierId) {
+        if (supplierId == null) {
             throw new InvalidPayableException("O fornecedor da conta a pagar é obrigatório");
         }
 
-        return supplierPersistencePort.findById(supplier.getId())
-                .orElseThrow(() -> new SupplierNotFoundException(supplier.getId()));
+        return supplierPersistencePort.findById(supplierId)
+                .orElseThrow(() -> new SupplierNotFoundException(supplierId));
     }
 }

@@ -3,6 +3,7 @@ package com.totvs.payablemanagementapi.adapter.input.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
+import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
@@ -77,53 +78,75 @@ class PayablesControllerTest {
 
     @Test
     void shouldReturnBadRequestWhenPayableViolatesDomainRule() throws Exception {
-        when(payableUseCase.save(any(Payable.class)))
+        when(payableUseCase.save(any(PayableDto.class)))
                 .thenThrow(new InvalidPayableException("O valor da conta a pagar não pode ser negativo"));
 
         mockMvc.perform(post("/payables")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payable(null))))
+                        .content(objectMapper.writeValueAsString(payableDto(null, 1L))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("O valor da conta a pagar não pode ser negativo"));
     }
 
     @Test
     void shouldCreatePayable() throws Exception {
-        when(payableUseCase.save(any(Payable.class))).thenReturn(payable(1L));
+        when(payableUseCase.save(any(PayableDto.class))).thenReturn(payable(1L));
 
         mockMvc.perform(post("/payables")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payable(null))))
+                        .content(objectMapper.writeValueAsString(payableDto(null, 1L))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
     void shouldRejectPayableWithoutAmount() throws Exception {
-        Payable payable = payable(null);
-        payable.setAmount(null);
+        PayableDto payableDto = new PayableDto(
+                null,
+                "Aluguel",
+                null,
+                StatusPayableEnum.PENDENTE,
+                LocalDate.of(2026, 8, 10),
+                null,
+                1L
+        );
+        when(payableUseCase.save(any(PayableDto.class)))
+                .thenThrow(new InvalidPayableException("O valor da conta a pagar é obrigatório"));
 
         mockMvc.perform(post("/payables")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payable)))
+                        .content(objectMapper.writeValueAsString(payableDto)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldRejectPayableWithoutSupplierId() throws Exception {
+        when(payableUseCase.save(any(PayableDto.class)))
+                .thenThrow(new InvalidPayableException("O fornecedor da conta a pagar é obrigatório"));
+
+        mockMvc.perform(post("/payables")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payableDto(null, null))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("O fornecedor da conta a pagar é obrigatório"));
     }
 
     @Test
     void shouldUpdatePayableUsingIdFromPath() throws Exception {
         Payable updatedPayable = payable(1L);
         updatedPayable.setDescription("Aluguel atualizado");
-        when(payableUseCase.update(any(Payable.class))).thenReturn(updatedPayable);
+        when(payableUseCase.update(any(PayableDto.class))).thenReturn(updatedPayable);
 
         mockMvc.perform(put("/payables/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payable(null))))
+                        .content(objectMapper.writeValueAsString(payableDto(99L, 1L))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.description").value("Aluguel atualizado"));
 
-        ArgumentCaptor<Payable> captor = ArgumentCaptor.forClass(Payable.class);
+        ArgumentCaptor<PayableDto> captor = ArgumentCaptor.forClass(PayableDto.class);
         verify(payableUseCase).update(captor.capture());
-        assertThat(captor.getValue().getId()).isEqualTo(1L);
+        assertThat(captor.getValue().id()).isEqualTo(1L);
+        assertThat(captor.getValue().supplierId()).isEqualTo(1L);
     }
 
     @Test
@@ -143,6 +166,18 @@ class PayablesControllerTest {
                 LocalDate.of(2026, 8, 10),
                 null,
                 new Supplier(1L, "Fornecedor")
+        );
+    }
+
+    private PayableDto payableDto(Long id, Long supplierId) {
+        return new PayableDto(
+                id,
+                "Aluguel",
+                new BigDecimal("150.00"),
+                StatusPayableEnum.PENDENTE,
+                LocalDate.of(2026, 8, 10),
+                null,
+                supplierId
         );
     }
 }

@@ -1,5 +1,6 @@
 package com.totvs.payablemanagementapi.core.port.input;
 
+import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.domain.Payable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,9 +10,9 @@ public interface PayableUseCase {
 
     Payable findById(Long id);
 
-    Payable save(Payable payable);
+    Payable save(PayableDto payableDto);
 
-    Payable update(Payable payable);
+    Payable update(PayableDto payableDto);
 
     void delete(Long payable);
 }

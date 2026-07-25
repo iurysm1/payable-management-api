@@ -2,6 +2,7 @@ package com.totvs.payablemanagementapi.core.service;
 
 import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
+import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Payable;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -23,6 +25,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,30 +74,31 @@ class PayableServiceTest {
 
     @Test
     void shouldSavePayable() {
-        Payable payable = payable(null);
+        PayableDto payableDto = payableDto(null, 1L);
         Payable savedPayable = payable(1L);
         Supplier supplier = supplier(1L, "Fornecedor");
         when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(supplier));
-        when(payablePersistencePort.save(payable)).thenReturn(savedPayable);
+        when(payablePersistencePort.save(any(Payable.class))).thenReturn(savedPayable);
 
-        Payable result = payableService.save(payable);
+        Payable result = payableService.save(payableDto);
 
         assertThat(result).isSameAs(savedPayable);
-        assertThat(payable.getSupplier()).isSameAs(supplier);
-        verify(payablePersistencePort).save(payable);
+        ArgumentCaptor<Payable> captor = ArgumentCaptor.forClass(Payable.class);
+        verify(payablePersistencePort).save(captor.capture());
+        assertThat(captor.getValue().getSupplier()).isSameAs(supplier);
     }
 
     @Test
     void shouldUpdateExistingPayable() {
         Payable existingPayable = payable(1L);
-        Payable updatedValues = new Payable(
+        PayableDto updatedValues = new PayableDto(
                 1L,
                 "Aluguel atualizado",
                 new BigDecimal("250.00"),
                 StatusPayableEnum.PAGO,
                 LocalDate.of(2026, 8, 15),
                 LocalDate.of(2026, 8, 10),
-                supplier(2L, "Novo fornecedor")
+                2L
         );
         Supplier supplier = supplier(2L, "Novo fornecedor");
         when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(existingPayable));
@@ -111,13 +115,21 @@ class PayableServiceTest {
 
     @Test
     void shouldThrowWhenSupplierDoesNotExist() {
-        Payable payable = payable(null);
-        payable.setSupplier(supplier(99L, "Fornecedor inexistente"));
+        PayableDto payableDto = payableDto(null, 99L);
         when(supplierPersistencePort.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> payableService.save(payable))
+        assertThatThrownBy(() -> payableService.save(payableDto))
                 .isInstanceOf(SupplierNotFoundException.class)
                 .hasMessage("Fornecedor com id 99 não encontrado");
+    }
+
+    @Test
+    void shouldRejectPayableWithoutSupplierId() {
+        PayableDto payableDto = payableDto(null, null);
+
+        assertThatThrownBy(() -> payableService.save(payableDto))
+                .isInstanceOf(com.totvs.payablemanagementapi.domain.exception.InvalidPayableException.class)
+                .hasMessage("O fornecedor da conta a pagar é obrigatório");
     }
 
     @Test
@@ -144,5 +156,17 @@ class PayableServiceTest {
 
     private Supplier supplier(Long id, String name) {
         return new Supplier(id, name);
+    }
+
+    private PayableDto payableDto(Long id, Long supplierId) {
+        return new PayableDto(
+                id,
+                "Aluguel",
+                new BigDecimal("150.00"),
+                StatusPayableEnum.PENDENTE,
+                LocalDate.of(2026, 8, 10),
+                null,
+                supplierId
+        );
     }
 }

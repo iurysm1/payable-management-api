@@ -1,6 +1,7 @@
 package com.totvs.payablemanagementapi.adapter.input.controller;
 
 import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
+import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.domain.Payable;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,15 +29,24 @@ public class PayablesController {
     }
 
     @PostMapping
-    public ResponseEntity<Payable> save(@Valid @RequestBody Payable payable) {
+    public ResponseEntity<Payable> save(@Valid @RequestBody PayableDto payableDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(payableUseCase.save(payable));
+                .body(payableUseCase.save(payableDto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Payable> update(@PathVariable Long id, @Valid @RequestBody Payable payable) {
-        payable.setId(id);
-        return ResponseEntity.ok(payableUseCase.update(payable));
+    public ResponseEntity<Payable> update(@PathVariable Long id, @Valid @RequestBody PayableDto payableDto) {
+        PayableDto payableToUpdate = new PayableDto(
+                id,
+                payableDto.description(),
+                payableDto.amount(),
+                payableDto.status(),
+                payableDto.expirationDate(),
+                payableDto.paymentDate(),
+                payableDto.supplierId()
+        );
+
+        return ResponseEntity.ok(payableUseCase.update(payableToUpdate));
     }
 
     @DeleteMapping("/{id}")
