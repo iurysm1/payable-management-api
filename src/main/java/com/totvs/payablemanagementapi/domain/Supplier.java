@@ -17,8 +17,8 @@ import lombok.NoArgsConstructor;
 public class Supplier {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    long id;
+    private Long id;
 
     @NotBlank
-    String name;
+    private String name;
 }

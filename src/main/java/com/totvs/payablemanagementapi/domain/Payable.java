@@ -1,9 +1,11 @@
 package com.totvs.payablemanagementapi.domain;
 
 
+import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +16,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Builder
 public class Payable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +26,10 @@ public class Payable {
 
     @NotNull
     private BigDecimal amount;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private StatusPayableEnum status = StatusPayableEnum.PENDENTE;
 
     @Column(name = "expiration_date")
     private LocalDate expirationDate;

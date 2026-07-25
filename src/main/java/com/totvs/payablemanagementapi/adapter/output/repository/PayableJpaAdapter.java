@@ -35,4 +35,9 @@ public class PayableJpaAdapter implements PayablePersistencePort {
     public void delete(Payable payable) {
         payableRepository.delete(payable);
     }
+
+    @Override
+    public boolean existsBySupplierId(Long supplierId) {
+        return payableRepository.existsBySupplierId(supplierId);
+    }
 }

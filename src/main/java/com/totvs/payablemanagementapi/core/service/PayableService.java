@@ -27,14 +27,24 @@ public class PayableService implements PayableUseCase {
 
     @Override
     public Payable save(Payable payable) {
+        // Verificar se payable.amount é nulo ou menor que zero, se for lancar uma badrequest exeception
+        // Criar um metodo para isso no Domain, pois vai ser usado em update tambem
+        // Criar uma personalizada para payables
         return payablePersistencePort.save(payable);
     }
 
     @Override
     public Payable update(Payable payable) {
-        findById(payable.getId());
+        Payable existingPayable = findById(payable.getId());
+        // Verificar se amount eh nulo ou maior que 0
+        existingPayable.setDescription(payable.getDescription());
+        existingPayable.setAmount(payable.getAmount());
+        existingPayable.setStatus(payable.getStatus());
+        existingPayable.setExpirationDate(payable.getExpirationDate());
+        existingPayable.setPaymentDate(payable.getPaymentDate());
+        existingPayable.setSupplier(payable.getSupplier());
 
-        return payablePersistencePort.save(payable);
+        return payablePersistencePort.save(existingPayable);
     }
 
     @Override

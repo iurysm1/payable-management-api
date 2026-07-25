@@ -11,4 +11,5 @@ public interface PayablePersistencePort {
     Optional<Payable> findById(Long id);
     Payable save(Payable payable);
     void delete(Payable payable);
+    boolean existsBySupplierId(Long supplierId);
 }
