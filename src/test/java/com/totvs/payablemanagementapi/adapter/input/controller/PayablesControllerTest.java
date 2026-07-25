@@ -6,6 +6,7 @@ import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
+import com.totvs.payablemanagementapi.domain.exception.InvalidPayableException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,6 +73,18 @@ class PayablesControllerTest {
         mockMvc.perform(get("/payables/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Conta a pagar com id 99 não encontrada"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenPayableViolatesDomainRule() throws Exception {
+        when(payableUseCase.save(any(Payable.class)))
+                .thenThrow(new InvalidPayableException("O valor da conta a pagar não pode ser negativo"));
+
+        mockMvc.perform(post("/payables")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payable(null))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("O valor da conta a pagar não pode ser negativo"));
     }
 
     @Test

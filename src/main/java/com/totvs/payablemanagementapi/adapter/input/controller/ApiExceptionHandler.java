@@ -3,6 +3,7 @@ package com.totvs.payablemanagementapi.adapter.input.controller;
 import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.SupplierInUseException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
+import com.totvs.payablemanagementapi.domain.exception.InvalidPayableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,5 +20,10 @@ public class ApiExceptionHandler {
     @ExceptionHandler(SupplierInUseException.class)
     public ProblemDetail handleSupplierInUse(SupplierInUseException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPayableException.class)
+    public ProblemDetail handleInvalidPayable(InvalidPayableException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 }

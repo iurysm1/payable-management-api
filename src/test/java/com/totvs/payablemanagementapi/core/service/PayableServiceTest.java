@@ -1,7 +1,9 @@
 package com.totvs.payablemanagementapi.core.service;
 
 import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
+import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
+import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
@@ -29,6 +31,9 @@ class PayableServiceTest {
 
     @Mock
     private PayablePersistencePort payablePersistencePort;
+
+    @Mock
+    private SupplierPersistencePort supplierPersistencePort;
 
     @InjectMocks
     private PayableService payableService;
@@ -68,11 +73,14 @@ class PayableServiceTest {
     void shouldSavePayable() {
         Payable payable = payable(null);
         Payable savedPayable = payable(1L);
+        Supplier supplier = supplier(1L, "Fornecedor");
+        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(supplier));
         when(payablePersistencePort.save(payable)).thenReturn(savedPayable);
 
         Payable result = payableService.save(payable);
 
         assertThat(result).isSameAs(savedPayable);
+        assertThat(payable.getSupplier()).isSameAs(supplier);
         verify(payablePersistencePort).save(payable);
     }
 
@@ -86,17 +94,30 @@ class PayableServiceTest {
                 StatusPayableEnum.PAGO,
                 LocalDate.of(2026, 8, 15),
                 LocalDate.of(2026, 8, 10),
-                new Supplier(2L, "Novo fornecedor")
+                supplier(2L, "Novo fornecedor")
         );
+        Supplier supplier = supplier(2L, "Novo fornecedor");
         when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(existingPayable));
+        when(supplierPersistencePort.findById(2L)).thenReturn(Optional.of(supplier));
         when(payablePersistencePort.save(existingPayable)).thenReturn(existingPayable);
 
         Payable result = payableService.update(updatedValues);
 
         assertThat(result.getDescription()).isEqualTo("Aluguel atualizado");
         assertThat(result.getAmount()).isEqualByComparingTo("250.00");
-        assertThat(result.getSupplier().getId()).isEqualTo(2L);
+        assertThat(result.getSupplier()).isSameAs(supplier);
         verify(payablePersistencePort).save(existingPayable);
+    }
+
+    @Test
+    void shouldThrowWhenSupplierDoesNotExist() {
+        Payable payable = payable(null);
+        payable.setSupplier(supplier(99L, "Fornecedor inexistente"));
+        when(supplierPersistencePort.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> payableService.save(payable))
+                .isInstanceOf(SupplierNotFoundException.class)
+                .hasMessage("Fornecedor com id 99 não encontrado");
     }
 
     @Test
@@ -117,7 +138,11 @@ class PayableServiceTest {
                 StatusPayableEnum.PENDENTE,
                 LocalDate.of(2026, 8, 10),
                 null,
-                new Supplier(1L, "Fornecedor")
+                supplier(1L, "Fornecedor")
         );
+    }
+
+    private Supplier supplier(Long id, String name) {
+        return new Supplier(id, name);
     }
 }
