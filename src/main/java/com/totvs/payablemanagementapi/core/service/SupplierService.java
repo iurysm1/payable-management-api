@@ -3,6 +3,7 @@ package com.totvs.payablemanagementapi.core.service;
 import com.totvs.payablemanagementapi.core.exception.SupplierInUseException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.SupplierUseCase;
+import com.totvs.payablemanagementapi.core.port.input.dto.SupplierDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Supplier;
@@ -30,14 +31,15 @@ public class SupplierService implements SupplierUseCase {
     }
 
     @Override
-    public Supplier save(Supplier supplier) {
+    public Supplier save(SupplierDto supplierDto) {
+        Supplier supplier = new Supplier(null, supplierDto.name());
         return supplierPersistencePort.save(supplier);
     }
 
     @Override
-    public Supplier update(Supplier supplier) {
-        Supplier existingSupplier = findById(supplier.getId());
-        existingSupplier.setName(supplier.getName());
+    public Supplier update(SupplierDto supplierDto) {
+        Supplier existingSupplier = findById(supplierDto.id());
+        existingSupplier.setName(supplierDto.name());
 
         return supplierPersistencePort.save(existingSupplier);
     }

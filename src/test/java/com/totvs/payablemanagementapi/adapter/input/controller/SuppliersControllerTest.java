@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.totvs.payablemanagementapi.core.exception.SupplierInUseException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.SupplierUseCase;
+import com.totvs.payablemanagementapi.core.port.input.dto.SupplierDto;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -72,11 +73,11 @@ class SuppliersControllerTest {
 
     @Test
     void shouldCreateSupplier() throws Exception {
-        when(supplierUseCase.save(any(Supplier.class))).thenReturn(supplier(1L, "TOTVS"));
+        when(supplierUseCase.save(any(SupplierDto.class))).thenReturn(supplier(1L, "TOTVS"));
 
         mockMvc.perform(post("/suppliers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(supplier(null, "TOTVS"))))
+                        .content(objectMapper.writeValueAsString(supplierDto(null, "TOTVS"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1));
     }
@@ -91,17 +92,17 @@ class SuppliersControllerTest {
 
     @Test
     void shouldUpdateSupplierUsingIdFromPath() throws Exception {
-        when(supplierUseCase.update(any(Supplier.class))).thenReturn(supplier(1L, "Nome atualizado"));
+        when(supplierUseCase.update(any(SupplierDto.class))).thenReturn(supplier(1L, "Nome atualizado"));
 
         mockMvc.perform(put("/suppliers/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(supplier(null, "Nome atualizado"))))
+                        .content(objectMapper.writeValueAsString(supplierDto(99L, "Nome atualizado"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Nome atualizado"));
 
-        ArgumentCaptor<Supplier> captor = ArgumentCaptor.forClass(Supplier.class);
+        ArgumentCaptor<SupplierDto> captor = ArgumentCaptor.forClass(SupplierDto.class);
         verify(supplierUseCase).update(captor.capture());
-        assertThat(captor.getValue().getId()).isEqualTo(1L);
+        assertThat(captor.getValue().id()).isEqualTo(1L);
     }
 
     @Test
@@ -123,5 +124,9 @@ class SuppliersControllerTest {
 
     private Supplier supplier(Long id, String name) {
         return new Supplier(id, name);
+    }
+
+    private SupplierDto supplierDto(Long id, String name) {
+        return new SupplierDto(id, name);
     }
 }

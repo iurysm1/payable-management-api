@@ -2,11 +2,13 @@ package com.totvs.payablemanagementapi.core.service;
 
 import com.totvs.payablemanagementapi.core.exception.SupplierInUseException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
+import com.totvs.payablemanagementapi.core.port.input.dto.SupplierDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,6 +21,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,20 +71,23 @@ class SupplierServiceTest {
 
     @Test
     void shouldSaveSupplier() {
-        Supplier supplier = supplier(null, "TOTVS");
+        SupplierDto supplierDto = supplierDto(null, "TOTVS");
         Supplier savedSupplier = supplier(1L, "TOTVS");
-        when(supplierPersistencePort.save(supplier)).thenReturn(savedSupplier);
+        when(supplierPersistencePort.save(any(Supplier.class))).thenReturn(savedSupplier);
 
-        Supplier result = supplierService.save(supplier);
+        Supplier result = supplierService.save(supplierDto);
 
         assertThat(result).isSameAs(savedSupplier);
-        verify(supplierPersistencePort).save(supplier);
+        ArgumentCaptor<Supplier> captor = ArgumentCaptor.forClass(Supplier.class);
+        verify(supplierPersistencePort).save(captor.capture());
+        assertThat(captor.getValue().getId()).isNull();
+        assertThat(captor.getValue().getName()).isEqualTo("TOTVS");
     }
 
     @Test
     void shouldUpdateExistingSupplier() {
         Supplier existingSupplier = supplier(1L, "Nome antigo");
-        Supplier updatedValues = supplier(1L, "Nome atualizado");
+        SupplierDto updatedValues = supplierDto(1L, "Nome atualizado");
         when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(existingSupplier));
         when(supplierPersistencePort.save(existingSupplier)).thenReturn(existingSupplier);
 
@@ -117,5 +123,9 @@ class SupplierServiceTest {
 
     private Supplier supplier(Long id, String name) {
         return new Supplier(id, name);
+    }
+
+    private SupplierDto supplierDto(Long id, String name) {
+        return new SupplierDto(id, name);
     }
 }

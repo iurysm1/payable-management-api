@@ -1,5 +1,6 @@
 package com.totvs.payablemanagementapi.core.port.input;
 
+import com.totvs.payablemanagementapi.core.port.input.dto.SupplierDto;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,9 +11,9 @@ public interface SupplierUseCase {
 
     Supplier findById(Long id);
 
-    Supplier save(Supplier supplier);
+    Supplier save(SupplierDto supplierDto);
 
-    Supplier update(Supplier supplier);
+    Supplier update(SupplierDto supplierDto);
 
     void delete(Long id);
 }

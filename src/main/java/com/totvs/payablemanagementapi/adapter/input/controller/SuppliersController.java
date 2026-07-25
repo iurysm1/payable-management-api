@@ -1,6 +1,7 @@
 package com.totvs.payablemanagementapi.adapter.input.controller;
 
 import com.totvs.payablemanagementapi.core.port.input.SupplierUseCase;
+import com.totvs.payablemanagementapi.core.port.input.dto.SupplierDto;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,15 +36,15 @@ public class SuppliersController {
     }
 
     @PostMapping
-    public ResponseEntity<Supplier> save(@Valid @RequestBody Supplier supplier) {
+    public ResponseEntity<Supplier> save(@Valid @RequestBody SupplierDto supplierDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(supplierUseCase.save(supplier));
+                .body(supplierUseCase.save(supplierDto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Supplier> update(@PathVariable Long id, @Valid @RequestBody Supplier supplier) {
-        supplier.setId(id);
-        return ResponseEntity.ok(supplierUseCase.update(supplier));
+    public ResponseEntity<Supplier> update(@PathVariable Long id, @Valid @RequestBody SupplierDto supplierDto) {
+        SupplierDto supplierToUpdate = new SupplierDto(id, supplierDto.name());
+        return ResponseEntity.ok(supplierUseCase.update(supplierToUpdate));
     }
 
     @DeleteMapping("/{id}")
