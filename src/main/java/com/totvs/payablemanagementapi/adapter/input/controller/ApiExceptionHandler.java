@@ -4,6 +4,7 @@ import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.InvalidDatePeriodCriteriaException;
 import com.totvs.payablemanagementapi.core.exception.SupplierInUseException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
+import com.totvs.payablemanagementapi.core.exception.TotalPaidReportNotFoundException;
 import com.totvs.payablemanagementapi.domain.exception.InvalidPayableException;
 import com.totvs.payablemanagementapi.domain.exception.InvalidSupplierException;
 import org.springframework.http.HttpStatus;
@@ -16,7 +17,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
-    @ExceptionHandler({PayableNotFoundException.class, SupplierNotFoundException.class})
+    @ExceptionHandler({
+            PayableNotFoundException.class,
+            SupplierNotFoundException.class,
+            TotalPaidReportNotFoundException.class
+    })
     public ProblemDetail handleNotFound(RuntimeException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }

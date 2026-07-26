@@ -1,6 +1,7 @@
 package com.totvs.payablemanagementapi.core.service.reports;
 
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
+import com.totvs.payablemanagementapi.core.exception.TotalPaidReportNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.dto.reports.PaidPayableItemDto;
 import com.totvs.payablemanagementapi.core.port.input.dto.reports.TotalPaidReportDto;
 import com.totvs.payablemanagementapi.core.port.input.dto.reports.TotalPaidReportFilterDto;
@@ -78,16 +79,14 @@ class TotalPaidReportServiceTest {
     }
 
     @Test
-    void shouldCreateEmptyReportWhenNoPaidPayablesAreFound() {
+    void shouldThrowNotFoundWhenNoPaidPayablesAreFound() {
         var filter = filter(10L);
         when(supplierService.findById(10L)).thenReturn(new Supplier(10L, "TOTVS"));
         when(totalPaidPersistencePort.findPaidByPeriod(filter)).thenReturn(List.of());
 
-        TotalPaidReportDto report = totalPaidReportService.processReport(filter);
-
-        assertThat(report.totalPaid()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(report.paidCount()).isZero();
-        assertThat(report.paidPayableItems()).isEmpty();
+        assertThatThrownBy(() -> totalPaidReportService.processReport(filter))
+                .isInstanceOf(TotalPaidReportNotFoundException.class)
+                .hasMessage("Nenhuma conta paga encontrada para o período informado");
     }
 
     @Test

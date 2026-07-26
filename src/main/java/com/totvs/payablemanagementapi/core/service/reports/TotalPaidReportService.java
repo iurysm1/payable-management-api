@@ -5,6 +5,7 @@ import com.totvs.payablemanagementapi.core.port.input.dto.reports.TotalPaidRepor
 import com.totvs.payablemanagementapi.core.port.input.dto.reports.TotalPaidReportFilterDto;
 import com.totvs.payablemanagementapi.core.port.input.reports.TotalPaidReportUseCase;
 import com.totvs.payablemanagementapi.core.port.output.reports.TotalPaidPersistencePort;
+import com.totvs.payablemanagementapi.core.exception.TotalPaidReportNotFoundException;
 import com.totvs.payablemanagementapi.core.service.SupplierService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,10 @@ public class TotalPaidReportService implements TotalPaidReportUseCase {
         List<PaidPayableItemDto> reportList = totalPaidPersistencePort.findPaidByPeriod(
                 totalPaidReportFilterDto
         );
+        if (reportList.isEmpty()) {
+            throw new TotalPaidReportNotFoundException();
+        }
+
 
         BigDecimal totalPaid = reportList.stream()
                 .map(PaidPayableItemDto::amount)

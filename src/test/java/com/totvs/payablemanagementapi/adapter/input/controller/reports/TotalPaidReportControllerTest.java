@@ -2,6 +2,7 @@ package com.totvs.payablemanagementapi.adapter.input.controller.reports;
 
 import com.totvs.payablemanagementapi.adapter.input.controller.ApiExceptionHandler;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
+import com.totvs.payablemanagementapi.core.exception.TotalPaidReportNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.dto.reports.PaidPayableItemDto;
 import com.totvs.payablemanagementapi.core.port.input.dto.reports.TotalPaidReportDto;
 import com.totvs.payablemanagementapi.core.port.input.dto.reports.TotalPaidReportFilterDto;
@@ -119,6 +120,20 @@ class TotalPaidReportControllerTest {
                         .param("endDate", "2026-08-31"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Fornecedor com id 99 não encontrado"));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenNoPaidPayablesAreFound() throws Exception {
+        when(totalPaidReportUseCase.processReport(any()))
+                .thenThrow(new TotalPaidReportNotFoundException());
+
+        mockMvc.perform(get("/report/total-paid")
+                        .param("startDate", "2026-08-01")
+                        .param("endDate", "2026-08-31"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value(
+                        "Nenhuma conta paga encontrada para o período informado"
+                ));
     }
 
     private TotalPaidReportDto report() {
