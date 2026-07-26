@@ -6,7 +6,7 @@ import com.totvs.payablemanagementapi.domain.PayableImportationItem;
 import java.util.List;
 
 public interface PayableImportPersistencePort {
-    PayableImportation create(PayableImportation payableImportation);
+    PayableImportation save(PayableImportation payableImportation);
     PayableImportation findById(long id);
 
     List<PayableImportation> findAll();

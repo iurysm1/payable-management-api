@@ -15,6 +15,10 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
 
+app:
+  file-storage:
+    base-path: ${IMPORT_STORAGE_PATH:./data/imports}
+
 server:
   servlet:
     context-path: /management/rest
