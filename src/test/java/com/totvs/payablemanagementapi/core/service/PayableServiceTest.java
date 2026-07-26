@@ -4,13 +4,14 @@ import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableFilterDto;
+import com.totvs.payablemanagementapi.core.port.input.dto.UpdatePayableStatusDto;
 import com.totvs.payablemanagementapi.core.port.output.PayablePersistencePort;
-import com.totvs.payablemanagementapi.core.port.output.SupplierPersistencePort;
 import com.totvs.payablemanagementapi.core.util.DatePeriodCriteria;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
 import com.totvs.payablemanagementapi.domain.exception.InvalidPayableException;
+import com.totvs.payablemanagementapi.domain.exception.InvalidSupplierException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +43,7 @@ class PayableServiceTest {
     private PayablePersistencePort payablePersistencePort;
 
     @Mock
-    private SupplierPersistencePort supplierPersistencePort;
+    private SupplierService supplierService;
 
     @InjectMocks
     private PayableService payableService;
@@ -102,7 +103,7 @@ class PayableServiceTest {
         PayableDto payableDto = payableDto(null, 1L);
         Payable savedPayable = payable(1L);
         Supplier supplier = supplier(1L, "Fornecedor");
-        when(supplierPersistencePort.findById(1L)).thenReturn(Optional.of(supplier));
+        when(supplierService.findById(1L)).thenReturn(supplier);
         when(payablePersistencePort.save(any(Payable.class))).thenReturn(savedPayable);
 
         Payable result = payableService.save(payableDto);
@@ -126,7 +127,7 @@ class PayableServiceTest {
         );
         Supplier supplier = supplier(2L, "Novo fornecedor");
         when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(defaultPayable));
-        when(supplierPersistencePort.findById(2L)).thenReturn(Optional.of(supplier));
+        when(supplierService.findById(2L)).thenReturn(supplier);
         when(payablePersistencePort.save(defaultPayable)).thenReturn(defaultPayable);
 
         Payable result = payableService.update(updatedValues);
@@ -140,7 +141,7 @@ class PayableServiceTest {
     @Test
     void shouldThrowWhenSupplierDoesNotExist() {
         PayableDto payableDto = payableDto(null, 99L);
-        when(supplierPersistencePort.findById(99L)).thenReturn(Optional.empty());
+        when(supplierService.findById(99L)).thenThrow(new SupplierNotFoundException(99L));
 
         assertThatThrownBy(() -> payableService.save(payableDto))
                 .isInstanceOf(SupplierNotFoundException.class)
@@ -151,9 +152,12 @@ class PayableServiceTest {
     void shouldRejectPayableWithoutSupplierId() {
         PayableDto payableDto = payableDto(null, null);
 
+        when(supplierService.findById(null))
+                .thenThrow(new InvalidSupplierException("O id do fornecedor é obrigatório"));
+
         assertThatThrownBy(() -> payableService.save(payableDto))
-                .isInstanceOf(com.totvs.payablemanagementapi.domain.exception.InvalidPayableException.class)
-                .hasMessage("O fornecedor da conta a pagar é obrigatório");
+                .isInstanceOf(InvalidSupplierException.class)
+                .hasMessage("O id do fornecedor é obrigatório");
     }
 
     @Test
@@ -169,7 +173,8 @@ class PayableServiceTest {
     void shouldNotSaveWhenStatusIsUnchanged() {
         when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(defaultPayable));
 
-        Payable result = payableService.updateStatus(1L, StatusPayableEnum.PENDENTE);
+        Payable result = payableService.updateStatus(
+                1L, new UpdatePayableStatusDto(StatusPayableEnum.PENDENTE.getCode(), null));
 
         assertThat(result).isSameAs(defaultPayable);
         assertThat(result.getStatus()).isEqualTo(StatusPayableEnum.PENDENTE);
@@ -181,10 +186,16 @@ class PayableServiceTest {
         when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(defaultPayable));
         when(payablePersistencePort.save(defaultPayable)).thenReturn(defaultPayable);
 
-        Payable result = payableService.updateStatus(1L, StatusPayableEnum.PAGO);
+        Payable result = payableService.updateStatus(
+                1L,
+                new UpdatePayableStatusDto(
+                        StatusPayableEnum.PAGO.getCode(), LocalDate.of(2026, 8, 10)
+                )
+        );
 
         assertThat(result).isSameAs(defaultPayable);
         assertThat(result.getStatus()).isEqualTo(StatusPayableEnum.PAGO);
+        assertThat(result.getPaymentDate()).isEqualTo(LocalDate.of(2026, 8, 10));
         verify(payablePersistencePort).save(defaultPayable);
     }
 
@@ -192,7 +203,8 @@ class PayableServiceTest {
     void shouldThrowWhenUpdatingStatusOfNonexistentPayable() {
         when(payablePersistencePort.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> payableService.updateStatus(99L, StatusPayableEnum.PAGO))
+        assertThatThrownBy(() -> payableService.updateStatus(
+                99L, new UpdatePayableStatusDto(StatusPayableEnum.PAGO.getCode(), null)))
                 .isInstanceOf(PayableNotFoundException.class)
                 .hasMessage("Conta a pagar com id 99 não encontrada");
 
@@ -201,13 +213,20 @@ class PayableServiceTest {
 
     @Test
     void shouldRejectNullStatusWhenUpdatingPayable() {
-        when(payablePersistencePort.findById(1L)).thenReturn(Optional.of(defaultPayable));
-
-        assertThatThrownBy(() -> payableService.updateStatus(1L, null))
+        assertThatThrownBy(() -> payableService.updateStatus(1L, new UpdatePayableStatusDto(null, null)))
                 .isInstanceOf(com.totvs.payablemanagementapi.domain.exception.InvalidPayableException.class)
                 .hasMessage("O status da conta a pagar é obrigatório");
 
-        verify(payablePersistencePort, never()).save(any(Payable.class));
+        verifyNoInteractions(payablePersistencePort);
+    }
+
+    @Test
+    void shouldRejectInvalidStatusCodeWhenUpdatingPayable() {
+        assertThatThrownBy(() -> payableService.updateStatus(1L, new UpdatePayableStatusDto(99, null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Código de status de conta a pagar inválido: 99");
+
+        verifyNoInteractions(payablePersistencePort);
     }
 
     private Payable payable(Long id) {

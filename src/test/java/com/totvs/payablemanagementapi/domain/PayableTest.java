@@ -66,9 +66,10 @@ class PayableTest {
                 "Aluguel", new BigDecimal("10.00"), StatusPayableEnum.PENDENTE,
                 null, null, supplier());
 
-        payable.updateStatus(StatusPayableEnum.PAGO);
+        payable.updateStatus(StatusPayableEnum.PAGO, LocalDate.of(2026, 8, 10));
 
         assertThat(payable.getStatus()).isEqualTo(StatusPayableEnum.PAGO);
+        assertThat(payable.getPaymentDate()).isEqualTo(LocalDate.of(2026, 8, 10));
     }
 
     @Test
@@ -77,9 +78,50 @@ class PayableTest {
                 "Aluguel", new BigDecimal("10.00"), StatusPayableEnum.PENDENTE,
                 null, null, supplier());
 
-        assertThatThrownBy(() -> payable.updateStatus(null))
+        assertThatThrownBy(() -> payable.updateStatus(null, null))
                 .isInstanceOf(InvalidPayableException.class)
                 .hasMessage("O status da conta a pagar é obrigatório");
+    }
+
+    @Test
+    void shouldRejectPaidPayableWithoutPaymentDate() {
+        assertThatThrownBy(() -> Payable.create(
+                "Aluguel", new BigDecimal("10.00"), StatusPayableEnum.PAGO,
+                null, null, supplier()))
+                .isInstanceOf(InvalidPayableException.class)
+                .hasMessage("A data de pagamento é obrigatória quando uma conta está com status PAGO");
+    }
+
+    @Test
+    void shouldRejectUnpaidPayableWithPaymentDate() {
+        assertThatThrownBy(() -> Payable.create(
+                "Aluguel", new BigDecimal("10.00"), StatusPayableEnum.PENDENTE,
+                null, LocalDate.of(2026, 8, 10), supplier()))
+                .isInstanceOf(InvalidPayableException.class)
+                .hasMessage("A data de pagamento deve ser nula quando status é diferente de PAGO");
+    }
+
+    @Test
+    void shouldClearPaymentDateWhenChangingFromPaidToUnpaid() {
+        Payable payable = Payable.create(
+                "Aluguel", new BigDecimal("10.00"), StatusPayableEnum.PAGO,
+                null, LocalDate.of(2026, 8, 10), supplier());
+
+        payable.updateStatus(StatusPayableEnum.PENDENTE, null);
+
+        assertThat(payable.getStatus()).isEqualTo(StatusPayableEnum.PENDENTE);
+        assertThat(payable.getPaymentDate()).isNull();
+    }
+
+    @Test
+    void shouldKeepExistingPaymentDateWhenPaidStatusIsRepeatedWithoutDate() {
+        Payable payable = Payable.create(
+                "Aluguel", new BigDecimal("10.00"), StatusPayableEnum.PAGO,
+                null, LocalDate.of(2026, 8, 10), supplier());
+
+        payable.updateStatus(StatusPayableEnum.PAGO, null);
+
+        assertThat(payable.getPaymentDate()).isEqualTo(LocalDate.of(2026, 8, 10));
     }
 
     private Supplier supplier() {

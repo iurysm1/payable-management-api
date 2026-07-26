@@ -7,13 +7,13 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Data
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -60,7 +60,7 @@ public class Payable {
             throw new InvalidPayableException("O fornecedor da conta a pagar é obrigatório");
         }
 
-        isValidStatusAndPaymentDate(status, paymentDate);
+        validateStatusAndPaymentDate(status, paymentDate);
     }
 
     public void updateDetails(
@@ -114,43 +114,49 @@ public class Payable {
             );
         }
 
-        if(this.status.equals(StatusPayableEnum.PAGO) && status != this.status) {
-            this.paymentDate = null;
-        }
+        LocalDate effectivePaymentDate = resolvePaymentDate(status, paymentDate);
 
-        if(status.equals(StatusPayableEnum.PAGO) && paymentDate == null) {
-            this.paymentDate = LocalDate.now();
-        }else if(status.equals(StatusPayableEnum.PAGO)){
-            this.paymentDate = paymentDate;
-        }
-
+        validateStatusAndPaymentDate(status, effectivePaymentDate);
         this.status = status;
+        this.paymentDate = effectivePaymentDate;
 
         validate();
     }
 
-    public void isValidStatusAndPaymentDate(StatusPayableEnum status, LocalDate paymentDate){
-        isPaidAndPaymentDateIsNull(status, paymentDate);
-        isNotPaidAndPaymentDateIsNotNull(status, paymentDate);
-    }
+    private void validateStatusAndPaymentDate(StatusPayableEnum status, LocalDate paymentDate) {
+        if (status == null) {
+            throw new InvalidPayableException("O status da conta a pagar é obrigatório");
+        }
 
-    public void isPaidAndPaymentDateIsNull(StatusPayableEnum status, LocalDate paymentDate){
-        if (status.equals(StatusPayableEnum.PAGO) && paymentDate == null) {
+        if (status == StatusPayableEnum.PAGO && paymentDate == null) {
             throw new InvalidPayableException(
-                    "A data de pagamento é obrigatório quando uma conta está com status PAGO"
+                    "A data de pagamento é obrigatória quando uma conta está com status PAGO"
             );
         }
-    }
 
-    public void isNotPaidAndPaymentDateIsNotNull(StatusPayableEnum status, LocalDate paymentDate){
-        if (!status.equals(StatusPayableEnum.PAGO) && paymentDate != null) {
+        if (status != StatusPayableEnum.PAGO && paymentDate != null) {
             throw new InvalidPayableException(
                     "A data de pagamento deve ser nula quando status é diferente de PAGO"
             );
         }
     }
 
+    private LocalDate resolvePaymentDate(
+            StatusPayableEnum newStatus,
+            LocalDate requestedPaymentDate
+    ) {
+        if (newStatus != StatusPayableEnum.PAGO) {
+            return null;
+        }
 
+        if (requestedPaymentDate != null) {
+            return requestedPaymentDate;
+        }
 
+        if (this.status == StatusPayableEnum.PAGO) {
+            return this.paymentDate;
+        }
 
+        return LocalDate.now();
+    }
 }

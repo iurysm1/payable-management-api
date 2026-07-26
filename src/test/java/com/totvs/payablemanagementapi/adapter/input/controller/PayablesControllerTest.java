@@ -5,6 +5,7 @@ import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableFilterDto;
+import com.totvs.payablemanagementapi.core.port.input.dto.UpdatePayableStatusDto;
 import com.totvs.payablemanagementapi.core.util.DatePeriodCriteria;
 import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.Supplier;
@@ -190,7 +191,14 @@ class PayablesControllerTest {
     @Test
     void shouldUpdatePayableUsingIdFromPath() throws Exception {
         Payable updatedPayable = payable(1L);
-        updatedPayable.setDescription("Aluguel atualizado");
+        updatedPayable.updateDetails(
+                "Aluguel atualizado",
+                updatedPayable.getAmount(),
+                updatedPayable.getStatus(),
+                updatedPayable.getExpirationDate(),
+                updatedPayable.getPaymentDate(),
+                updatedPayable.getSupplier()
+        );
         when(payableUseCase.update(any(PayableDto.class))).thenReturn(updatedPayable);
 
         mockMvc.perform(put("/payable/1")
@@ -215,17 +223,24 @@ class PayablesControllerTest {
 
     @Test
     void shouldUpdatePayableStatus() throws Exception {
-        Payable updatedPayable = payable(1L);
-        updatedPayable.setStatus(StatusPayableEnum.PAGO);
-        when(payableUseCase.updateStatus(1L, StatusPayableEnum.PAGO)).thenReturn(updatedPayable);
+        LocalDate paymentDate = LocalDate.of(2026, 8, 10);
+        Payable updatedPayable = new Payable(
+                1L, "Aluguel", new BigDecimal("150.00"), StatusPayableEnum.PAGO,
+                LocalDate.of(2026, 8, 10), paymentDate, new Supplier(1L, "Fornecedor")
+        );
+        when(payableUseCase.updateStatus(
+                1L, new UpdatePayableStatusDto(StatusPayableEnum.PAGO.getCode(), paymentDate)
+        )).thenReturn(updatedPayable);
 
         mockMvc.perform(patch("/payable/1/status")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\": 1}"))
+                        .content("{\"status\": 1, \"paymentDate\": \"2026-08-10\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PAGO"));
 
-        verify(payableUseCase).updateStatus(1L, StatusPayableEnum.PAGO);
+        verify(payableUseCase).updateStatus(
+                1L, new UpdatePayableStatusDto(StatusPayableEnum.PAGO.getCode(), paymentDate)
+        );
     }
 
     @Test
@@ -252,13 +267,16 @@ class PayablesControllerTest {
 
     @Test
     void shouldReturnBadRequestWhenStatusCodeDoesNotExist() throws Exception {
+        when(payableUseCase.updateStatus(1L, new UpdatePayableStatusDto(99, null)))
+                .thenThrow(new IllegalArgumentException("Código de status de conta a pagar inválido: 99"));
+
         mockMvc.perform(patch("/payable/1/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\": 99}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Código de status de conta a pagar inválido: 99"));
 
-        verifyNoInteractions(payableUseCase);
+        verify(payableUseCase).updateStatus(1L, new UpdatePayableStatusDto(99, null));
     }
 
     private Payable payable(Long id) {

@@ -72,9 +72,8 @@ public class PayablesController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<Payable> updateStatus(
             @PathVariable Long id,
-            @Valid @RequestBody UpdatePayableStatusDto request
+            @Valid @RequestBody UpdatePayableStatusDto updatePayableStatusDto
     ) {
-        StatusPayableEnum statusEnum = StatusPayableEnum.fromCode(request.status());
-        return ResponseEntity.ok(payableUseCase.updateStatus(id, statusEnum));
+        return ResponseEntity.ok(payableUseCase.updateStatus(id, updatePayableStatusDto));
     }
 }
