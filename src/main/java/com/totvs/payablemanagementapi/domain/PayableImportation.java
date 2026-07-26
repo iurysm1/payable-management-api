@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 @Table(name = "payable_importation")
+@Builder
 public class PayableImportation {
 
     @Id
@@ -39,26 +41,27 @@ public class PayableImportation {
 
     public static PayableImportation create() {
         LocalDateTime now = LocalDateTime.now();
-        return new PayableImportation(
-                null,
-                now,
-                now,
-                StatusPayableImportationEnum.PENDING,
-                null
-        );
+
+        PayableImportation payableImportation = PayableImportation.builder()
+                .createdAt(now)
+                .updatedAt(now)
+                .status(StatusPayableImportationEnum.PENDING)
+                .build();
+
+        payableImportation.validate();
+
+        return payableImportation;
     }
 
     public void updateStatus(StatusPayableImportationEnum status, String errorMessage) {
-        validateStatusAndErrorMessage(status, errorMessage);
         this.status = status;
         this.errorMessage = errorMessage;
         this.updatedAt = LocalDateTime.now();
+
+        validate();
     }
 
-    private void validateStatusAndErrorMessage(
-            StatusPayableImportationEnum status,
-            String errorMessage
-    ) {
+    public void validate() {
         if (status == null) {
             throw new InvalidPayableImportationException("O status da importação é obrigatório");
         }

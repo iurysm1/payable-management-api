@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Entity
 @Table(name = "payable_importation_item")
+@Builder
 public class PayableImportationItem {
 
     @Id
@@ -36,17 +38,14 @@ public class PayableImportationItem {
     private String errorMessage;
 
     public static PayableImportationItem create(Long payableImportationId) {
-        if (payableImportationId == null) {
-            throw new InvalidPayableImportationItemException("A importação do item é obrigatória");
-        }
+        PayableImportationItem payableImportationItem = PayableImportationItem.builder()
+                .payableImportationId(payableImportationId)
+                .status(StatusPayableImportationItemEnum.PENDING)
+                .build();
 
-        return new PayableImportationItem(
-                null,
-                null,
-                payableImportationId,
-                StatusPayableImportationItemEnum.PENDING,
-                null
-        );
+        payableImportationItem.validate();
+
+        return payableImportationItem;
     }
 
     public void updateStatus(
@@ -54,17 +53,18 @@ public class PayableImportationItem {
             Long payableId,
             String errorMessage
     ) {
-        validateStatusPayableAndErrorMessage(status, payableId, errorMessage);
         this.status = status;
         this.payableId = payableId;
         this.errorMessage = errorMessage;
+
+        validate();
     }
 
-    private void validateStatusPayableAndErrorMessage(
-            StatusPayableImportationItemEnum status,
-            Long payableId,
-            String errorMessage
-    ) {
+    public void validate() {
+        if (payableImportationId == null) {
+            throw new InvalidPayableImportationItemException("A importação do item é obrigatória");
+        }
+
         if (status == null) {
             throw new InvalidPayableImportationItemException("O status do item de importação é obrigatório");
         }
