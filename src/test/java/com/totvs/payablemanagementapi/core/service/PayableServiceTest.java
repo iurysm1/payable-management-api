@@ -60,7 +60,8 @@ class PayableServiceTest {
         var pageable = PageRequest.of(0, 10);
         var filter = new PayableFilterDto(
                 "Aluguel",
-                new DatePeriodCriteria(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31))
+                new DatePeriodCriteria(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31)),
+                StatusPayableEnum.PENDENTE
         );
         Page<Payable> page = new PageImpl<>(List.of(payable(1L)), pageable, 1);
         when(payablePersistencePort.findAll(pageable, filter)).thenReturn(page);

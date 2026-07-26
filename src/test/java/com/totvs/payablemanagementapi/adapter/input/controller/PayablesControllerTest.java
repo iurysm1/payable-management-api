@@ -71,6 +71,30 @@ class PayablesControllerTest {
         ArgumentCaptor<PayableFilterDto> captor = ArgumentCaptor.forClass(PayableFilterDto.class);
         verify(payableUseCase).list(any(), captor.capture());
         assertThat(captor.getValue().description()).isEqualTo("Aluguel");
+        assertThat(captor.getValue().status()).isNull();
+    }
+
+    @Test
+    void shouldListPayablesFilteredByStatus() throws Exception {
+        when(payableUseCase.list(any(), any())).thenReturn(Page.empty());
+
+        mockMvc.perform(get("/payable").param("status", "pago"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<PayableFilterDto> captor = ArgumentCaptor.forClass(PayableFilterDto.class);
+        verify(payableUseCase).list(any(), captor.capture());
+        assertThat(captor.getValue().status()).isEqualTo(StatusPayableEnum.PAGO);
+    }
+
+    @Test
+    void shouldReturnCustomBadRequestWhenStatusNameDoesNotExist() throws Exception {
+        mockMvc.perform(get("/payable").param("status", "em_analise"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(
+                        "Nome de status de conta a pagar inválido: em_analise"
+                ));
+
+        verifyNoInteractions(payableUseCase);
     }
 
     @Test
@@ -84,6 +108,7 @@ class PayablesControllerTest {
         verify(payableUseCase).list(any(), captor.capture());
         assertThat(captor.getValue().periodCriteria())
                 .isEqualTo(new DatePeriodCriteria(null, null));
+        assertThat(captor.getValue().status()).isNull();
     }
 
     @Test

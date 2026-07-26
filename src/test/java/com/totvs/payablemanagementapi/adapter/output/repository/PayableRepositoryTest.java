@@ -49,23 +49,23 @@ class PayableRepositoryTest {
         Supplier supplier = supplierRepository.save(new Supplier(null, "Fornecedor de teste"));
 
         payableRepository.saveAll(List.of(
-                payable("Aluguel escritório", LocalDate.of(2026, 8, 10), supplier),
-                payable("ALUGUEL depósito", LocalDate.of(2026, 8, 20), supplier),
-                payable("Internet", LocalDate.of(2026, 8, 15), supplier),
-                payable("Conta sem vencimento", null, supplier)
+                payable("Aluguel escritório", LocalDate.of(2026, 8, 10), StatusPayableEnum.PENDENTE, supplier),
+                payable("ALUGUEL depósito", LocalDate.of(2026, 8, 20), StatusPayableEnum.PENDENTE, supplier),
+                payable("Internet", LocalDate.of(2026, 8, 15), StatusPayableEnum.PAGO, supplier),
+                payable("Conta sem vencimento", null, StatusPayableEnum.CANCELADO, supplier)
         ));
     }
 
     @Test
     void shouldReturnAllPayablesWhenDescriptionIsNull() {
-        var result = payableRepository.findAllByFilters(null, null, null, PAGEABLE);
+        var result = payableRepository.findAllByFilters(null, null, null, null, PAGEABLE);
 
         assertThat(result.getContent()).hasSize(4);
     }
 
     @Test
     void shouldFilterByPartialDescriptionIgnoringCase() {
-        var result = payableRepository.findAllByFilters("aluguEL", null, null, PAGEABLE);
+        var result = payableRepository.findAllByFilters("aluguEL", null, null, null, PAGEABLE);
 
         assertThat(result.getContent())
                 .extracting(Payable::getDescription)
@@ -78,6 +78,7 @@ class PayableRepositoryTest {
                 null,
                 LocalDate.of(2026, 8, 10),
                 LocalDate.of(2026, 8, 20),
+                null,
                 PAGEABLE
         );
 
@@ -88,7 +89,7 @@ class PayableRepositoryTest {
 
     @Test
     void shouldReturnPayablesWithAndWithoutExpirationDateWhenPeriodIsAbsent() {
-        var result = payableRepository.findAllByFilters(null, null, null, PAGEABLE);
+        var result = payableRepository.findAllByFilters(null, null, null, null, PAGEABLE);
 
         assertThat(result.getContent())
                 .extracting(Payable::getDescription)
@@ -101,6 +102,7 @@ class PayableRepositoryTest {
                 "alugu",
                 LocalDate.of(2026, 8, 1),
                 LocalDate.of(2026, 8, 15),
+                null,
                 PAGEABLE
         );
 
@@ -109,11 +111,42 @@ class PayableRepositoryTest {
                 .containsExactly("Aluguel escritório");
     }
 
-    private Payable payable(String description, LocalDate expirationDate, Supplier supplier) {
+    @Test
+    void shouldFilterByStatus() {
+        var result = payableRepository.findAllByFilters(
+                null, null, null, StatusPayableEnum.PENDENTE, PAGEABLE
+        );
+
+        assertThat(result.getContent())
+                .extracting(Payable::getDescription)
+                .containsExactlyInAnyOrder("Aluguel escritório", "ALUGUEL depósito");
+    }
+
+    @Test
+    void shouldCombineStatusWithDescriptionAndExpirationDatePeriod() {
+        var result = payableRepository.findAllByFilters(
+                "internet",
+                LocalDate.of(2026, 8, 1),
+                LocalDate.of(2026, 8, 31),
+                StatusPayableEnum.PAGO,
+                PAGEABLE
+        );
+
+        assertThat(result.getContent())
+                .extracting(Payable::getDescription)
+                .containsExactly("Internet");
+    }
+
+    private Payable payable(
+            String description,
+            LocalDate expirationDate,
+            StatusPayableEnum status,
+            Supplier supplier
+    ) {
         return Payable.builder()
                 .description(description)
                 .amount(new BigDecimal("100.00"))
-                .status(StatusPayableEnum.PENDENTE)
+                .status(status)
                 .expirationDate(expirationDate)
                 .supplier(supplier)
                 .build();

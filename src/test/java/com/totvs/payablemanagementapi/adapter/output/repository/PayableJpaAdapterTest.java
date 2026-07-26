@@ -3,6 +3,7 @@ package com.totvs.payablemanagementapi.adapter.output.repository;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableFilterDto;
 import com.totvs.payablemanagementapi.core.util.DatePeriodCriteria;
 import com.totvs.payablemanagementapi.domain.Payable;
+import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,28 +35,32 @@ class PayableJpaAdapterTest {
         var startDate = LocalDate.of(2026, 8, 1);
         var endDate = LocalDate.of(2026, 8, 31);
         var filter = new PayableFilterDto(
-                "Aluguel", new DatePeriodCriteria(startDate, endDate)
+                "Aluguel", new DatePeriodCriteria(startDate, endDate), StatusPayableEnum.PENDENTE
         );
         Page<Payable> page = new PageImpl<>(List.of(), pageable, 0);
-        when(payableRepository.findAllByFilters("Aluguel", startDate, endDate, pageable))
+        when(payableRepository.findAllByFilters(
+                "Aluguel", startDate, endDate, StatusPayableEnum.PENDENTE, pageable
+        ))
                 .thenReturn(page);
 
         Page<Payable> result = payableJpaAdapter.findAll(pageable, filter);
 
         assertThat(result).isSameAs(page);
-        verify(payableRepository).findAllByFilters("Aluguel", startDate, endDate, pageable);
+        verify(payableRepository).findAllByFilters(
+                "Aluguel", startDate, endDate, StatusPayableEnum.PENDENTE, pageable
+        );
     }
 
     @Test
     void shouldForwardNullDatesWhenThereIsNoDatePeriod() {
         var pageable = PageRequest.of(0, 10);
-        var filter = new PayableFilterDto(null, new DatePeriodCriteria(null, null));
+        var filter = new PayableFilterDto(null, new DatePeriodCriteria(null, null), null);
         Page<Payable> page = new PageImpl<>(List.of(), pageable, 0);
-        when(payableRepository.findAllByFilters(null, null, null, pageable)).thenReturn(page);
+        when(payableRepository.findAllByFilters(null, null, null, null, pageable)).thenReturn(page);
 
         Page<Payable> result = payableJpaAdapter.findAll(pageable, filter);
 
         assertThat(result).isSameAs(page);
-        verify(payableRepository).findAllByFilters(null, null, null, pageable);
+        verify(payableRepository).findAllByFilters(null, null, null, null, pageable);
     }
 }

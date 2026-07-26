@@ -3,6 +3,7 @@ package com.totvs.payablemanagementapi.domain.enums;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class StatusPayableEnumTest {
 
@@ -21,5 +22,19 @@ class StatusPayableEnumTest {
         assertThat(StatusPayableEnum.fromCode(0)).isEqualTo(StatusPayableEnum.PENDENTE);
         assertThat(StatusPayableEnum.fromCode(1)).isEqualTo(StatusPayableEnum.PAGO);
         assertThat(StatusPayableEnum.fromCode(2)).isEqualTo(StatusPayableEnum.CANCELADO);
+    }
+
+    @Test
+    void shouldFindStatusByNameIgnoringCase() {
+        assertThat(StatusPayableEnum.fromName("PAGO")).isEqualTo(StatusPayableEnum.PAGO);
+        assertThat(StatusPayableEnum.fromName("pago")).isEqualTo(StatusPayableEnum.PAGO);
+        assertThat(StatusPayableEnum.fromName("pEnDeNtE")).isEqualTo(StatusPayableEnum.PENDENTE);
+    }
+
+    @Test
+    void shouldRejectInvalidStatusName() {
+        assertThatThrownBy(() -> StatusPayableEnum.fromName("EM_ANALISE"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Nome de status de conta a pagar inválido: EM_ANALISE");
     }
 }

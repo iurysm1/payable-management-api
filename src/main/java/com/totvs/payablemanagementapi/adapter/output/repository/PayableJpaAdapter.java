@@ -22,6 +22,7 @@ public class PayableJpaAdapter implements PayablePersistencePort {
                 filter.description(),
                 filter.periodCriteria().startDate(),
                 filter.periodCriteria().endDate(),
+                filter.status(),
                 pageable
         );
     }

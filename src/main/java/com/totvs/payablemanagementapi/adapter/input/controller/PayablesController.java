@@ -29,10 +29,12 @@ public class PayablesController {
             @RequestParam(required = false) String description,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) String status,
             Pageable pageable
     ) {
         DatePeriodCriteria periodCriteria = new DatePeriodCriteria(startDate, endDate);
-        PayableFilterDto filter = new PayableFilterDto(description,periodCriteria);
+        StatusPayableEnum statusFilter = status == null ? null : StatusPayableEnum.fromName(status);
+        PayableFilterDto filter = new PayableFilterDto(description, periodCriteria, statusFilter);
 
         return ResponseEntity.ok(payableUseCase.list(pageable, filter));
     }

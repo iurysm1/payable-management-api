@@ -24,4 +24,12 @@ public enum StatusPayableEnum {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Código de status de conta a pagar inválido: %d".formatted(code)));
     }
+
+    public static StatusPayableEnum fromName(String name) {
+        return Arrays.stream(values())
+                .filter(status -> status.name().equalsIgnoreCase(name))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Nome de status de conta a pagar inválido: %s".formatted(name)));
+    }
 }
