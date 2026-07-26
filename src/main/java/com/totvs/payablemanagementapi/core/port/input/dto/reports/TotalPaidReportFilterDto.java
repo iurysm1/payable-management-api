@@ -1,10 +1,9 @@
 package com.totvs.payablemanagementapi.core.port.input.dto.reports;
 
-import com.totvs.payablemanagementapi.core.util.DatePeriodCriteria;
-import com.totvs.payablemanagementapi.domain.Supplier;
+import com.totvs.payablemanagementapi.core.util.DatePeriodCriteriaRequired;
 
 public record TotalPaidReportFilterDto (
-        Supplier supplier,
-        DatePeriodCriteria periodCriteria
+        Long supplierId,
+        DatePeriodCriteriaRequired periodCriteria
 ){
 }
