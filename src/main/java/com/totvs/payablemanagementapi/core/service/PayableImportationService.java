@@ -12,6 +12,7 @@ import com.totvs.payablemanagementapi.domain.PayableImportationItem;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableImportationEnum;
 import com.totvs.payablemanagementapi.domain.exception.InvalidPayableImportationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -19,22 +20,27 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PayableImportationService implements PayableImportationServiceUseCase {
 
     private final FileStoragePort fileStoragePort;
     private final PayableImportPersistencePort payableImportPersistencePort;
-    private final PayableImportEventPublisher payableImportEventPublisher;
+    //private final PayableImportEventPublisher payableImportEventPublisher;
 
 
     @Override
     public PayableImportation create(InputStream file) {
         PayableImportation payableImportation = PayableImportation.create();
+        log.error("Iniciando a importação de contas a pagar");
 
-        fileStoragePort.saveCsvFile(file);
-        payableImportPersistencePort.save(payableImportation);
-        payableImportEventPublisher.publish();
+        String filePath = fileStoragePort.saveCsvFile(file);
+        log.info("Arquivo CSV armazenado em {}", filePath);
 
-        return payableImportation;
+        PayableImportation savedImportation = payableImportPersistencePort.save(payableImportation);
+        log.info("Importação de contas a pagar criada com id {}", savedImportation.getId());
+        //payableImportEventPublisher.publish();
+
+        return savedImportation;
     }
 
     @Override
@@ -56,7 +62,9 @@ public class PayableImportationService implements PayableImportationServiceUseCa
         PayableImportation payableImportation = findById(id);
         payableImportation.updateStatus(status, updateStatusDto.errorMessage());
 
-        return payableImportPersistencePort.save(payableImportation);
+        PayableImportation updatedImportation = payableImportPersistencePort.save(payableImportation);
+        log.info("Status da importação {} atualizado para {}", id, status);
+        return updatedImportation;
     }
 
     @Override

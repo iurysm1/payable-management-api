@@ -22,3 +22,7 @@ app:
 server:
   servlet:
     context-path: /management/rest
+
+logging:
+  level:
+    com.totvs.payablemanagementapi: INFO

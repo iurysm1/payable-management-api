@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -63,7 +64,8 @@ class PayableImportationControllerTest {
     @Test
     void shouldRejectRequestWithoutFile() throws Exception {
         mockMvc.perform(multipart("/import/payable"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("É necessário enviar o arquivo para a importação"));
     }
 
     @Test
@@ -76,6 +78,17 @@ class PayableImportationControllerTest {
                                 "description,amount".getBytes()
                         )))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldRejectUnsupportedMediaType() throws Exception {
+        mockMvc.perform(post("/import/payable")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.detail").value(
+                        "O tipo de mídia enviado não é suportado para a importação"
+                ));
     }
 
     private PayableImportation importation(Long id) {
