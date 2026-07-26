@@ -59,6 +59,8 @@ public class Payable {
         if (supplier == null) {
             throw new InvalidPayableException("O fornecedor da conta a pagar é obrigatório");
         }
+
+        isValidStatusAndPaymentDate(status, paymentDate);
     }
 
     public void updateDetails(
@@ -105,13 +107,50 @@ public class Payable {
         return payable;
     }
 
-    public void updateStatus(StatusPayableEnum status) {
+    public void updateStatus(StatusPayableEnum status, LocalDate paymentDate) {
         if (status == null) {
             throw new InvalidPayableException(
                     "O status da conta a pagar é obrigatório"
             );
         }
 
+        if(this.status.equals(StatusPayableEnum.PAGO) && status != this.status) {
+            this.paymentDate = null;
+        }
+
+        if(status.equals(StatusPayableEnum.PAGO) && paymentDate == null) {
+            this.paymentDate = LocalDate.now();
+        }else if(status.equals(StatusPayableEnum.PAGO)){
+            this.paymentDate = paymentDate;
+        }
+
         this.status = status;
+
+        validate();
     }
+
+    public void isValidStatusAndPaymentDate(StatusPayableEnum status, LocalDate paymentDate){
+        isPaidAndPaymentDateIsNull(status, paymentDate);
+        isNotPaidAndPaymentDateIsNotNull(status, paymentDate);
+    }
+
+    public void isPaidAndPaymentDateIsNull(StatusPayableEnum status, LocalDate paymentDate){
+        if (status.equals(StatusPayableEnum.PAGO) && paymentDate == null) {
+            throw new InvalidPayableException(
+                    "A data de pagamento é obrigatório quando uma conta está com status PAGO"
+            );
+        }
+    }
+
+    public void isNotPaidAndPaymentDateIsNotNull(StatusPayableEnum status, LocalDate paymentDate){
+        if (!status.equals(StatusPayableEnum.PAGO) && paymentDate != null) {
+            throw new InvalidPayableException(
+                    "A data de pagamento deve ser nula quando status é diferente de PAGO"
+            );
+        }
+    }
+
+
+
+
 }
