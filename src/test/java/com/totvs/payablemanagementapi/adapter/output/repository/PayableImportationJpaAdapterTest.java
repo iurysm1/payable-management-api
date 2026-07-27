@@ -56,12 +56,22 @@ class PayableImportationJpaAdapterTest {
 
     @Test
     void shouldFindItemsByImportationId() {
-        List<PayableImportationItem> items = List.of(PayableImportationItem.create(1L));
+        List<PayableImportationItem> items = List.of(PayableImportationItem.createSuccess(1L, 2L));
 
         when(payableImportationItemRepository.findByPayableImportationId(1L)).thenReturn(items);
 
         assertThat(adapter.findByPayableImportationId(1L)).isSameAs(items);
 
         verify(payableImportationItemRepository).findByPayableImportationId(1L);
+    }
+
+    @Test
+    void shouldDelegateItemSaveToRepository() {
+        PayableImportationItem item = PayableImportationItem.createSuccess(1L, 2L);
+        when(payableImportationItemRepository.save(item)).thenReturn(item);
+
+        assertThat(adapter.saveItem(item)).isSameAs(item);
+
+        verify(payableImportationItemRepository).save(item);
     }
 }

@@ -10,31 +10,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PayableImportationItemTest {
 
     @Test
-    void shouldCreatePendingItemWithoutPayableOrError() {
-        PayableImportationItem item = PayableImportationItem.create(10L);
+    void shouldCreateSuccessfulItemWithPayable() {
+        PayableImportationItem item = PayableImportationItem.createSuccess(10L, 20L);
 
         assertThat(item.getPayableImportationId()).isEqualTo(10L);
-        assertThat(item.getStatus()).isEqualTo(StatusPayableImportationItemEnum.PENDING);
-        assertThat(item.getPayableId()).isNull();
-        assertThat(item.getErrorMessage()).isNull();
-    }
-
-    @Test
-    void shouldCompleteItemWithPayable() {
-        PayableImportationItem item = PayableImportationItem.create(10L);
-
-        item.updateStatus(StatusPayableImportationItemEnum.COMPLETED, 20L, null);
-
-        assertThat(item.getStatus()).isEqualTo(StatusPayableImportationItemEnum.COMPLETED);
+        assertThat(item.getStatus()).isEqualTo(StatusPayableImportationItemEnum.SUCCESS);
         assertThat(item.getPayableId()).isEqualTo(20L);
         assertThat(item.getErrorMessage()).isNull();
     }
 
     @Test
     void shouldStoreErrorWithoutPayable() {
-        PayableImportationItem item = PayableImportationItem.create(10L);
-
-        item.updateStatus(StatusPayableImportationItemEnum.ERROR, null, "Valor inválido");
+        PayableImportationItem item = PayableImportationItem.createError(10L, "Valor inválido");
 
         assertThat(item.getStatus()).isEqualTo(StatusPayableImportationItemEnum.ERROR);
         assertThat(item.getPayableId()).isNull();
@@ -42,38 +29,30 @@ class PayableImportationItemTest {
     }
 
     @Test
-    void shouldRejectCompletedItemWithoutPayable() {
-        PayableImportationItem item = PayableImportationItem.create(10L);
-
-        assertThatThrownBy(() -> item.updateStatus(
-                StatusPayableImportationItemEnum.COMPLETED,
-                null,
-                null
-        )).isInstanceOf(InvalidPayableImportationItemException.class)
-                .hasMessage("A conta a pagar é obrigatória quando o item é concluído");
+    void shouldRejectSuccessfulItemWithoutPayable() {
+        assertThatThrownBy(() -> PayableImportationItem.createSuccess(10L, null))
+                .isInstanceOf(InvalidPayableImportationItemException.class)
+                .hasMessage("A conta a pagar é obrigatória quando o item possui sucesso");
     }
 
     @Test
-    void shouldRejectPayableForNonCompletedItem() {
-        PayableImportationItem item = PayableImportationItem.create(10L);
+    void shouldRejectPayableForErrorItem() {
+        PayableImportationItem item = PayableImportationItem.builder()
+                .payableImportationId(10L)
+                .payableId(20L)
+                .status(StatusPayableImportationItemEnum.ERROR)
+                .errorMessage("Valor inválido")
+                .build();
 
-        assertThatThrownBy(() -> item.updateStatus(
-                StatusPayableImportationItemEnum.ERROR,
-                20L,
-                "Valor inválido"
-        )).isInstanceOf(InvalidPayableImportationItemException.class)
-                .hasMessage("A conta a pagar deve ser nula quando o item não é concluído");
+        assertThatThrownBy(item::validate)
+                .isInstanceOf(InvalidPayableImportationItemException.class)
+                .hasMessage("A conta a pagar deve ser nula quando o item não possui sucesso");
     }
 
     @Test
     void shouldRejectErrorWithoutMessage() {
-        PayableImportationItem item = PayableImportationItem.create(10L);
-
-        assertThatThrownBy(() -> item.updateStatus(
-                StatusPayableImportationItemEnum.ERROR,
-                null,
-                " "
-        )).isInstanceOf(InvalidPayableImportationItemException.class)
+        assertThatThrownBy(() -> PayableImportationItem.createError(10L, " "))
+                .isInstanceOf(InvalidPayableImportationItemException.class)
                 .hasMessage("A mensagem de erro é obrigatória quando o item possui erro");
     }
 }

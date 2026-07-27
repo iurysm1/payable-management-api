@@ -2,11 +2,13 @@ package com.totvs.payablemanagementapi.adapter.input.controller;
 
 import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.PayableImportEventPublishingException;
+import com.totvs.payablemanagementapi.core.exception.PayableImportationNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.InvalidDatePeriodCriteriaException;
 import com.totvs.payablemanagementapi.core.exception.SupplierInUseException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.TotalPaidReportNotFoundException;
 import com.totvs.payablemanagementapi.domain.exception.InvalidPayableException;
+import com.totvs.payablemanagementapi.domain.exception.InvalidPayableImportationException;
 import com.totvs.payablemanagementapi.domain.exception.InvalidSupplierException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -22,6 +24,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler({
             PayableNotFoundException.class,
+            PayableImportationNotFoundException.class,
             SupplierNotFoundException.class,
             TotalPaidReportNotFoundException.class
     })
@@ -34,7 +37,11 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
     }
 
-    @ExceptionHandler({InvalidPayableException.class, InvalidSupplierException.class})
+    @ExceptionHandler({
+            InvalidPayableException.class,
+            InvalidPayableImportationException.class,
+            InvalidSupplierException.class
+    })
     public ProblemDetail handleInvalidDomainData(RuntimeException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
     }

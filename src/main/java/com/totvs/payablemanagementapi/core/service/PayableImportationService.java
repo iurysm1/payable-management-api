@@ -91,12 +91,13 @@ public class PayableImportationService implements PayableImportationServiceUseCa
 
     @Override
     public List<PayableImportation> list() {
-        return List.of();
+        return payableImportPersistencePort.findAll();
     }
 
     @Override
     public List<PayableImportationItem> listPayableImportationItem(Long id) {
-        return List.of();
+        findById(id);
+        return payableImportPersistencePort.findByPayableImportationId(id);
     }
 
     private void compensateCreation(PayableImportation savedImportation, String csvFilePath) {

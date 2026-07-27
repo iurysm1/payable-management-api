@@ -1,8 +1,11 @@
 package com.totvs.payablemanagementapi.adapter.input.controller;
 
 import com.totvs.payablemanagementapi.core.port.input.PayableImportationServiceUseCase;
+import com.totvs.payablemanagementapi.core.exception.PayableImportationNotFoundException;
 import com.totvs.payablemanagementapi.domain.PayableImportation;
+import com.totvs.payablemanagementapi.domain.PayableImportationItem;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableImportationEnum;
+import com.totvs.payablemanagementapi.domain.enums.StatusPayableImportationItemEnum;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -42,6 +45,37 @@ class PayableImportationControllerTest {
         mockMvc.perform(get("/import/payable"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1));
+    }
+
+    @Test
+    void shouldFindPayableImportationById() throws Exception {
+        when(payableImportationServiceUseCase.findById(1L)).thenReturn(importation(1L));
+
+        mockMvc.perform(get("/import/payable/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    void shouldListPayableImportationItems() throws Exception {
+        when(payableImportationServiceUseCase.listPayableImportationItem(1L))
+                .thenReturn(List.of(item(2L, 1L)));
+
+        mockMvc.perform(get("/import/payable/1/items"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(2))
+                .andExpect(jsonPath("$[0].payableImportationId").value(1));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenPayableImportationDoesNotExist() throws Exception {
+        when(payableImportationServiceUseCase.findById(99L))
+                .thenThrow(new PayableImportationNotFoundException(99L));
+
+        mockMvc.perform(get("/import/payable/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail")
+                        .value("Importação de contas a pagar com id 99 não encontrada"));
     }
 
     @Test
@@ -94,5 +128,14 @@ class PayableImportationControllerTest {
     private PayableImportation importation(Long id) {
         LocalDateTime now = LocalDateTime.now();
         return new PayableImportation(id, now, now, StatusPayableImportationEnum.PENDING, null);
+    }
+
+    private PayableImportationItem item(Long id, Long importationId) {
+        return PayableImportationItem.builder()
+                .id(id)
+                .payableImportationId(importationId)
+                .payableId(3L)
+                .status(StatusPayableImportationItemEnum.SUCCESS)
+                .build();
     }
 }

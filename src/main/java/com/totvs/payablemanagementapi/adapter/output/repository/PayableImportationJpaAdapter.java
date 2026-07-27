@@ -21,6 +21,11 @@ public class PayableImportationJpaAdapter implements PayableImportPersistencePor
     }
 
     @Override
+    public PayableImportationItem saveItem(PayableImportationItem payableImportationItem) {
+        return payableImportationItemRepository.save(payableImportationItem);
+    }
+
+    @Override
     public PayableImportation findById(long id) {
         return payableImportationRepository.findById(id).orElse(null);
     }

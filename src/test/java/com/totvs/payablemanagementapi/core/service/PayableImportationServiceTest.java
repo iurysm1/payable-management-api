@@ -8,7 +8,9 @@ import com.totvs.payablemanagementapi.core.port.output.PayableImportPersistenceP
 import com.totvs.payablemanagementapi.core.port.output.event.PayableImportEvent;
 import com.totvs.payablemanagementapi.core.port.output.event.PayableImportEventPublisher;
 import com.totvs.payablemanagementapi.domain.PayableImportation;
+import com.totvs.payablemanagementapi.domain.PayableImportationItem;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableImportationEnum;
+import com.totvs.payablemanagementapi.domain.enums.StatusPayableImportationItemEnum;
 import com.totvs.payablemanagementapi.domain.exception.InvalidPayableImportationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,12 +20,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class PayableImportationServiceTest {
@@ -121,6 +125,54 @@ class PayableImportationServiceTest {
                         null
                 )
         ))
+                .isInstanceOf(PayableImportationNotFoundException.class)
+                .hasMessage("Importação de contas a pagar com id 99 não encontrada");
+    }
+
+    @Test
+    void shouldListImportations() {
+        List<PayableImportation> importations = List.of(PayableImportation.create());
+        when(payableImportPersistencePort.findAll()).thenReturn(importations);
+
+        List<PayableImportation> result = payableImportationService.list();
+
+        assertThat(result).isSameAs(importations);
+        verify(payableImportPersistencePort).findAll();
+    }
+
+    @Test
+    void shouldListItemsForExistingImportation() {
+        PayableImportation importation = PayableImportation.create();
+        PayableImportationItem item = PayableImportationItem.builder()
+                .id(2L)
+                .payableImportationId(1L)
+                .payableId(3L)
+                .status(StatusPayableImportationItemEnum.SUCCESS)
+                .build();
+        List<PayableImportationItem> items = List.of(item);
+        when(payableImportPersistencePort.findById(1L)).thenReturn(importation);
+        when(payableImportPersistencePort.findByPayableImportationId(1L)).thenReturn(items);
+
+        List<PayableImportationItem> result = payableImportationService.listPayableImportationItem(1L);
+
+        assertThat(result).isSameAs(items);
+        verify(payableImportPersistencePort).findByPayableImportationId(1L);
+    }
+
+    @Test
+    void shouldRejectNullIdWhenListingImportationItems() {
+        assertThatThrownBy(() -> payableImportationService.listPayableImportationItem(null))
+                .isInstanceOf(InvalidPayableImportationException.class)
+                .hasMessage("O id da importação é obrigatório");
+
+        verifyNoInteractions(payableImportPersistencePort);
+    }
+
+    @Test
+    void shouldRejectMissingImportationWhenListingItems() {
+        when(payableImportPersistencePort.findById(99L)).thenReturn(null);
+
+        assertThatThrownBy(() -> payableImportationService.listPayableImportationItem(99L))
                 .isInstanceOf(PayableImportationNotFoundException.class)
                 .hasMessage("Importação de contas a pagar com id 99 não encontrada");
     }

@@ -2,12 +2,14 @@ package com.totvs.payablemanagementapi.adapter.input.controller;
 
 import com.totvs.payablemanagementapi.core.port.input.PayableImportationServiceUseCase;
 import com.totvs.payablemanagementapi.domain.PayableImportation;
+import com.totvs.payablemanagementapi.domain.PayableImportationItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,6 +31,16 @@ public class PayableImportationController {
     @GetMapping
     public ResponseEntity<List<PayableImportation>> list() {
         return ResponseEntity.ok(payableImportationServiceUseCase.list());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PayableImportation> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(payableImportationServiceUseCase.findById(id));
+    }
+
+    @GetMapping("/{id}/items")
+    public ResponseEntity<List<PayableImportationItem>> listItems(@PathVariable Long id) {
+        return ResponseEntity.ok(payableImportationServiceUseCase.listPayableImportationItem(id));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

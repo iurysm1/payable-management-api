@@ -9,10 +9,8 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum StatusPayableImportationItemEnum {
 
-    PENDING(0, "Item pendente"),
-    PROCESSING(1, "Item em processamento"),
-    COMPLETED(2, "Item concluído"),
-    ERROR(3, "Item com erro");
+    SUCCESS(0, "Item importado com sucesso"),
+    ERROR(1, "Item com erro");
 
     private final int code;
     private final String description;

@@ -37,10 +37,14 @@ public class PayableImportationItem {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
-    public static PayableImportationItem create(Long payableImportationId) {
+    public static PayableImportationItem createSuccess(
+            Long payableImportationId,
+            Long payableId
+    ) {
         PayableImportationItem payableImportationItem = PayableImportationItem.builder()
                 .payableImportationId(payableImportationId)
-                .status(StatusPayableImportationItemEnum.PENDING)
+                .payableId(payableId)
+                .status(StatusPayableImportationItemEnum.SUCCESS)
                 .build();
 
         payableImportationItem.validate();
@@ -48,16 +52,19 @@ public class PayableImportationItem {
         return payableImportationItem;
     }
 
-    public void updateStatus(
-            StatusPayableImportationItemEnum status,
-            Long payableId,
+    public static PayableImportationItem createError(
+            Long payableImportationId,
             String errorMessage
     ) {
-        this.status = status;
-        this.payableId = payableId;
-        this.errorMessage = errorMessage;
+        PayableImportationItem payableImportationItem = PayableImportationItem.builder()
+                .payableImportationId(payableImportationId)
+                .status(StatusPayableImportationItemEnum.ERROR)
+                .errorMessage(errorMessage)
+                .build();
 
-        validate();
+        payableImportationItem.validate();
+
+        return payableImportationItem;
     }
 
     public void validate() {
@@ -69,15 +76,15 @@ public class PayableImportationItem {
             throw new InvalidPayableImportationItemException("O status do item de importação é obrigatório");
         }
 
-        if (status == StatusPayableImportationItemEnum.COMPLETED && payableId == null) {
+        if (status == StatusPayableImportationItemEnum.SUCCESS && payableId == null) {
             throw new InvalidPayableImportationItemException(
-                    "A conta a pagar é obrigatória quando o item é concluído"
+                    "A conta a pagar é obrigatória quando o item possui sucesso"
             );
         }
 
-        if (status != StatusPayableImportationItemEnum.COMPLETED && payableId != null) {
+        if (status != StatusPayableImportationItemEnum.SUCCESS && payableId != null) {
             throw new InvalidPayableImportationItemException(
-                    "A conta a pagar deve ser nula quando o item não é concluído"
+                    "A conta a pagar deve ser nula quando o item não possui sucesso"
             );
         }
 

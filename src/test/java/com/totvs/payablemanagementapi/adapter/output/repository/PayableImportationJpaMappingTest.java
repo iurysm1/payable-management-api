@@ -60,12 +60,10 @@ class PayableImportationJpaMappingTest {
         entityManager.persist(importation);
         entityManager.flush();
 
-        PayableImportationItem completedItem = PayableImportationItem.create(importation.getId());
-        completedItem.updateStatus(StatusPayableImportationItemEnum.COMPLETED, payable.getId(), null);
-        entityManager.persist(completedItem);
+        PayableImportationItem successfulItem = PayableImportationItem.createSuccess(importation.getId(), payable.getId());
+        entityManager.persist(successfulItem);
 
-        PayableImportationItem errorItem = PayableImportationItem.create(importation.getId());
-        errorItem.updateStatus(StatusPayableImportationItemEnum.ERROR, null, "Linha inválida");
+        PayableImportationItem errorItem = PayableImportationItem.createError(importation.getId(), "Linha inválida");
         entityManager.persist(errorItem);
         entityManager.flush();
         entityManager.clear();
@@ -74,9 +72,9 @@ class PayableImportationJpaMappingTest {
                 PayableImportation.class,
                 importation.getId()
         );
-        PayableImportationItem persistedCompletedItem = entityManager.find(
+        PayableImportationItem persistedSuccessfulItem = entityManager.find(
                 PayableImportationItem.class,
-                completedItem.getId()
+                successfulItem.getId()
         );
         PayableImportationItem persistedErrorItem = entityManager.find(
                 PayableImportationItem.class,
@@ -86,8 +84,8 @@ class PayableImportationJpaMappingTest {
         assertThat(persistedImportation.getStatus())
                 .isEqualTo(StatusPayableImportationEnum.COMPLETED_WITH_ERRORS);
         assertThat(persistedImportation.getErrorMessage()).isNull();
-        assertThat(persistedCompletedItem.getPayableId()).isEqualTo(payable.getId());
-        assertThat(persistedCompletedItem.getStatus()).isEqualTo(StatusPayableImportationItemEnum.COMPLETED);
+        assertThat(persistedSuccessfulItem.getPayableId()).isEqualTo(payable.getId());
+        assertThat(persistedSuccessfulItem.getStatus()).isEqualTo(StatusPayableImportationItemEnum.SUCCESS);
         assertThat(persistedErrorItem.getPayableId()).isNull();
         assertThat(persistedErrorItem.getStatus()).isEqualTo(StatusPayableImportationItemEnum.ERROR);
         assertThat(persistedErrorItem.getErrorMessage()).isEqualTo("Linha inválida");
