@@ -26,7 +26,7 @@ Inicie todo o ambiente com Docker Compose. Ele sobe a aplicação e as dependên
 (PostgreSQL e RabbitMQ), já configuradas para se comunicarem entre si:
 
 ```bash
-docker compose up -d --build
+docker compose up --build
 ```
 
 A API estará disponível em `http://localhost:8080/management/rest`.
