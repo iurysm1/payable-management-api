@@ -1,14 +1,13 @@
 package com.totvs.payablemanagementapi.core.service;
 
 import com.totvs.payablemanagementapi.core.exception.FileStorageException;
+import com.totvs.payablemanagementapi.core.port.input.PayableImportationLineUseCase;
 import com.totvs.payablemanagementapi.core.port.input.PayableImportationServiceUseCase;
-import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.core.port.input.dto.UpdatePayableImportationStatusDto;
 import com.totvs.payablemanagementapi.core.port.output.FileStoragePort;
 import com.totvs.payablemanagementapi.core.port.output.PayableImportPersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.event.PayableImportEvent;
-import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.PayableImportation;
 import com.totvs.payablemanagementapi.domain.PayableImportationItem;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
@@ -43,7 +42,7 @@ class PayableImportationProcessingServiceTest {
     private PayableImportationServiceUseCase payableImportationServiceUseCase;
 
     @Mock
-    private PayableUseCase payableUseCase;
+    private PayableImportationLineUseCase payableImportationLineUseCase;
 
     @Mock
     private PayableImportPersistencePort payableImportPersistencePort;
@@ -71,17 +70,12 @@ class PayableImportationProcessingServiceTest {
                 "description,amount,status,expirationDate,paymentDate,supplierId\n"
                         + "Pagamento de aluguel,15012.00,PAGO,2026-08-10,2026-01-11,2\n"
         ));
-        when(payableUseCase.save(payableDto)).thenReturn(Payable.builder().id(20L).build());
-
         processingService.process(event);
 
         ArgumentCaptor<UpdatePayableImportationStatusDto> statusCaptor =
                 ArgumentCaptor.forClass(UpdatePayableImportationStatusDto.class);
-        ArgumentCaptor<PayableImportationItem> itemCaptor =
-                ArgumentCaptor.forClass(PayableImportationItem.class);
         verify(payableImportationServiceUseCase, times(2)).updateStatus(eq(1L), statusCaptor.capture());
-        verify(payableUseCase).save(payableDto);
-        verify(payableImportPersistencePort).saveItem(itemCaptor.capture());
+        verify(payableImportationLineUseCase).process(1L, payableDto);
         verify(fileStoragePort).deleteFile("a1b2c3.csv");
 
         assertThat(statusCaptor.getAllValues())
@@ -90,8 +84,6 @@ class PayableImportationProcessingServiceTest {
                         StatusPayableImportationEnum.PROCESSING.getCode(),
                         StatusPayableImportationEnum.COMPLETED.getCode()
                 );
-        assertThat(itemCaptor.getValue().getStatus()).isEqualTo(StatusPayableImportationItemEnum.SUCCESS);
-        assertThat(itemCaptor.getValue().getPayableId()).isEqualTo(20L);
     }
 
     @Test
@@ -122,8 +114,7 @@ class PayableImportationProcessingServiceTest {
                         + "Conta válida,20.00,PENDENTE,,,2\n"
         ));
         doThrow(new InvalidPayableException("Fornecedor inválido"))
-                .when(payableUseCase).save(invalidDto);
-        when(payableUseCase.save(validDto)).thenReturn(Payable.builder().id(21L).build());
+                .when(payableImportationLineUseCase).process(1L, invalidDto);
 
         processingService.process(event);
 
@@ -132,9 +123,9 @@ class PayableImportationProcessingServiceTest {
         ArgumentCaptor<PayableImportationItem> itemCaptor =
                 ArgumentCaptor.forClass(PayableImportationItem.class);
         verify(payableImportationServiceUseCase, times(2)).updateStatus(eq(1L), statusCaptor.capture());
-        verify(payableUseCase).save(invalidDto);
-        verify(payableUseCase).save(validDto);
-        verify(payableImportPersistencePort, times(2)).saveItem(itemCaptor.capture());
+        verify(payableImportationLineUseCase).process(1L, invalidDto);
+        verify(payableImportationLineUseCase).process(1L, validDto);
+        verify(payableImportPersistencePort).saveItem(itemCaptor.capture());
         verify(fileStoragePort).deleteFile("a1b2c3.csv");
 
         assertThat(statusCaptor.getAllValues())
@@ -145,10 +136,7 @@ class PayableImportationProcessingServiceTest {
                 );
         assertThat(itemCaptor.getAllValues())
                 .extracting(PayableImportationItem::getStatus)
-                .containsExactly(
-                        StatusPayableImportationItemEnum.ERROR,
-                        StatusPayableImportationItemEnum.SUCCESS
-                );
+                .containsExactly(StatusPayableImportationItemEnum.ERROR);
         assertThat(itemCaptor.getAllValues().getFirst().getErrorMessage()).isEqualTo("Fornecedor inválido");
     }
 
@@ -190,7 +178,7 @@ class PayableImportationProcessingServiceTest {
                 org.mockito.ArgumentMatchers.any(UpdatePayableImportationStatusDto.class)
         );
         verify(fileStoragePort).deleteFile("a1b2c3.csv");
-        verifyNoInteractions(payableUseCase, payableImportPersistencePort);
+        verifyNoInteractions(payableImportationLineUseCase, payableImportPersistencePort);
     }
 
     @Test

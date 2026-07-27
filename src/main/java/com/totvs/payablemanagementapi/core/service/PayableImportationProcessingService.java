@@ -1,14 +1,13 @@
 package com.totvs.payablemanagementapi.core.service;
 
+import com.totvs.payablemanagementapi.core.port.input.PayableImportationLineUseCase;
 import com.totvs.payablemanagementapi.core.port.input.PayableImportationProcessingUseCase;
 import com.totvs.payablemanagementapi.core.port.input.PayableImportationServiceUseCase;
-import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
 import com.totvs.payablemanagementapi.core.port.input.dto.UpdatePayableImportationStatusDto;
 import com.totvs.payablemanagementapi.core.port.output.FileStoragePort;
 import com.totvs.payablemanagementapi.core.port.output.PayableImportPersistencePort;
 import com.totvs.payablemanagementapi.core.port.output.event.PayableImportEvent;
-import com.totvs.payablemanagementapi.domain.Payable;
 import com.totvs.payablemanagementapi.domain.PayableImportation;
 import com.totvs.payablemanagementapi.domain.PayableImportationItem;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableEnum;
@@ -34,7 +33,7 @@ import java.util.List;
 public class PayableImportationProcessingService implements PayableImportationProcessingUseCase {
 
     private final PayableImportationServiceUseCase payableImportationServiceUseCase;
-    private final PayableUseCase payableUseCase;
+    private final PayableImportationLineUseCase payableImportationLineUseCase;
     private final PayableImportPersistencePort payableImportPersistencePort;
     private final FileStoragePort fileStoragePort;
 
@@ -115,10 +114,7 @@ public class PayableImportationProcessingService implements PayableImportationPr
 
     private boolean processLine(Long payableImportationId, String line, long lineNumber) {
         try {
-            Payable payable = payableUseCase.save(toPayableDto(line));
-            payableImportPersistencePort.saveItem(
-                    PayableImportationItem.createSuccess(payableImportationId, payable.getId())
-            );
+            payableImportationLineUseCase.process(payableImportationId, toPayableDto(line));
             return true;
         } catch (Exception exception) {
             log.warn(
