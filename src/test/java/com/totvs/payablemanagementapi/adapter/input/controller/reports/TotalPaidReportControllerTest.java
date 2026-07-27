@@ -1,6 +1,7 @@
 package com.totvs.payablemanagementapi.adapter.input.controller.reports;
 
 import com.totvs.payablemanagementapi.adapter.input.controller.ApiExceptionHandler;
+import com.totvs.payablemanagementapi.adapter.input.security.SecurityConfiguration;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.exception.TotalPaidReportNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.dto.reports.PaidPayableItemDto;
@@ -14,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -30,8 +32,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(TotalPaidReportController.class)
-@Import(ApiExceptionHandler.class)
+@WebMvcTest(
+        controllers = TotalPaidReportController.class,
+        properties = {
+                "app.security.username=test-user",
+                "app.security.password=test-password"
+        }
+)
+@Import({ApiExceptionHandler.class, SecurityConfiguration.class})
+@WithMockUser
 class TotalPaidReportControllerTest {
 
     @Autowired

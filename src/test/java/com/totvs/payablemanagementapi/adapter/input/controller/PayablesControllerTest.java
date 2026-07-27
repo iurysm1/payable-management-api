@@ -1,6 +1,7 @@
 package com.totvs.payablemanagementapi.adapter.input.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.totvs.payablemanagementapi.adapter.input.security.SecurityConfiguration;
 import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.PayableUseCase;
 import com.totvs.payablemanagementapi.core.port.input.dto.PayableDto;
@@ -20,6 +21,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,11 +40,21 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PayablesController.class)
-@Import(ApiExceptionHandler.class)
+@WebMvcTest(
+        controllers = PayablesController.class,
+        properties = {
+                "app.security.username=test-user",
+                "app.security.password=test-password"
+        }
+)
+@Import({ApiExceptionHandler.class, SecurityConfiguration.class})
+@WithMockUser
 class PayablesControllerTest {
 
     @Autowired
@@ -52,6 +65,41 @@ class PayablesControllerTest {
 
     @MockitoBean
     private PayableUseCase payableUseCase;
+
+    @Test
+    @WithAnonymousUser
+    void shouldRejectRequestWithoutCredentials() throws Exception {
+        mockMvc.perform(get("/payable"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(header().string("WWW-Authenticate", "Basic realm=\"payable-management-api\""))
+                .andExpect(jsonPath("$.detail")
+                        .value("Credenciais de autenticação ausentes ou inválidas"));
+
+        verifyNoInteractions(payableUseCase);
+    }
+
+    @Test
+    @WithAnonymousUser
+    void shouldRejectInvalidCredentials() throws Exception {
+        mockMvc.perform(get("/payable").with(httpBasic("invalid", "invalid")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.detail")
+                        .value("Credenciais de autenticação ausentes ou inválidas"));
+
+        verifyNoInteractions(payableUseCase);
+    }
+
+    @Test
+    @WithAnonymousUser
+    void shouldAllowValidBasicCredentials() throws Exception {
+        when(payableUseCase.list(any(), any())).thenReturn(Page.empty());
+
+        mockMvc.perform(get("/payable").with(httpBasic("test-user", "test-password")))
+                .andExpect(status().isOk());
+
+        verify(payableUseCase).list(any(), any());
+    }
 
     @Test
     void shouldListPayables() throws Exception {

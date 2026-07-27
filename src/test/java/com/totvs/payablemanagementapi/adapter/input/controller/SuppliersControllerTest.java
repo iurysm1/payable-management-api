@@ -1,6 +1,7 @@
 package com.totvs.payablemanagementapi.adapter.input.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.totvs.payablemanagementapi.adapter.input.security.SecurityConfiguration;
 import com.totvs.payablemanagementapi.core.exception.SupplierInUseException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.SupplierUseCase;
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -31,8 +33,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(SuppliersController.class)
-@Import(ApiExceptionHandler.class)
+@WebMvcTest(
+        controllers = SuppliersController.class,
+        properties = {
+                "app.security.username=test-user",
+                "app.security.password=test-password"
+        }
+)
+@Import({ApiExceptionHandler.class, SecurityConfiguration.class})
+@WithMockUser
 class SuppliersControllerTest {
 
     @Autowired

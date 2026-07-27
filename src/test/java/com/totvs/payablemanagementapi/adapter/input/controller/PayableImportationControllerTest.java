@@ -1,5 +1,6 @@
 package com.totvs.payablemanagementapi.adapter.input.controller;
 
+import com.totvs.payablemanagementapi.adapter.input.security.SecurityConfiguration;
 import com.totvs.payablemanagementapi.core.port.input.PayableImportationServiceUseCase;
 import com.totvs.payablemanagementapi.core.exception.PayableImportationNotFoundException;
 import com.totvs.payablemanagementapi.domain.PayableImportation;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.mock.web.MockMultipartFile;
@@ -28,8 +30,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PayableImportationController.class)
-@Import(ApiExceptionHandler.class)
+@WebMvcTest(
+        controllers = PayableImportationController.class,
+        properties = {
+                "app.security.username=test-user",
+                "app.security.password=test-password"
+        }
+)
+@Import({ApiExceptionHandler.class, SecurityConfiguration.class})
+@WithMockUser
 class PayableImportationControllerTest {
 
     @Autowired
