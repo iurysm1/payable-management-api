@@ -7,4 +7,6 @@ public interface FileStoragePort {
     String saveCsvFile(InputStream content);
 
     InputStream getFile(String path);
+
+    void deleteFile(String path);
 }

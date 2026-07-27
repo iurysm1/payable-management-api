@@ -36,7 +36,7 @@ public class LocalFileStorageAdapter implements FileStoragePort {
             Files.copy(content, targetPath);
             return basePath.relativize(targetPath).toString();
         } catch (IOException exception) {
-            deleteFile(targetPath);
+            deleteQuietly(targetPath);
             throw new FileStorageException("Não foi possível salvar o arquivo", exception);
         }
     }
@@ -49,6 +49,17 @@ public class LocalFileStorageAdapter implements FileStoragePort {
             return Files.newInputStream(filePath);
         } catch (IOException exception) {
             throw new FileStorageException("Não foi possível ler o arquivo: " + path, exception);
+        }
+    }
+
+    @Override
+    public void deleteFile(String path) {
+        Path filePath = resolveStoredPath(path);
+
+        try {
+            Files.deleteIfExists(filePath);
+        } catch (IOException exception) {
+            throw new FileStorageException("Não foi possível remover o arquivo: " + path, exception);
         }
     }
 
@@ -65,7 +76,7 @@ public class LocalFileStorageAdapter implements FileStoragePort {
         return resolvedPath;
     }
 
-    private void deleteFile(Path filePath) {
+    private void deleteQuietly(Path filePath) {
         try {
             Files.deleteIfExists(filePath);
         } catch (IOException ignored) {

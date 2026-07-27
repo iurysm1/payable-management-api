@@ -1,9 +1,11 @@
 package com.totvs.payablemanagementapi.core.service;
 
+import com.totvs.payablemanagementapi.core.exception.PayableImportEventPublishingException;
 import com.totvs.payablemanagementapi.core.exception.PayableImportationNotFoundException;
 import com.totvs.payablemanagementapi.core.port.input.dto.UpdatePayableImportationStatusDto;
 import com.totvs.payablemanagementapi.core.port.output.FileStoragePort;
 import com.totvs.payablemanagementapi.core.port.output.PayableImportPersistencePort;
+import com.totvs.payablemanagementapi.core.port.output.event.PayableImportEvent;
 import com.totvs.payablemanagementapi.core.port.output.event.PayableImportEventPublisher;
 import com.totvs.payablemanagementapi.domain.PayableImportation;
 import com.totvs.payablemanagementapi.domain.enums.StatusPayableImportationEnum;
@@ -14,9 +16,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayInputStream;
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +39,49 @@ class PayableImportationServiceTest {
 
     @InjectMocks
     private PayableImportationService payableImportationService;
+
+    @Test
+    void shouldPublishImportationEventAfterSavingFileAndImportation() {
+        ByteArrayInputStream file = new ByteArrayInputStream("header".getBytes());
+        PayableImportation savedImportation = PayableImportation.builder()
+                .id(1L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .status(StatusPayableImportationEnum.PENDING)
+                .build();
+        when(fileStoragePort.saveCsvFile(file)).thenReturn("a1b2c3.csv");
+        when(payableImportPersistencePort.save(org.mockito.ArgumentMatchers.any(PayableImportation.class)))
+                .thenReturn(savedImportation);
+
+        payableImportationService.create(file);
+
+        verify(payableImportEventPublisher).publish(
+                new PayableImportEvent(1L, "a1b2c3.csv")
+        );
+    }
+
+    @Test
+    void shouldCompensateFileAndImportationWhenPublicationFails() {
+        ByteArrayInputStream file = new ByteArrayInputStream("header".getBytes());
+        PayableImportation savedImportation = PayableImportation.builder()
+                .id(1L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .status(StatusPayableImportationEnum.PENDING)
+                .build();
+        when(fileStoragePort.saveCsvFile(file)).thenReturn("a1b2c3.csv");
+        when(payableImportPersistencePort.save(org.mockito.ArgumentMatchers.any(PayableImportation.class)))
+                .thenReturn(savedImportation);
+        doThrow(new PayableImportEventPublishingException("Timeout ao aguardar confirmação do RabbitMQ"))
+                .when(payableImportEventPublisher)
+                .publish(new PayableImportEvent(1L, "a1b2c3.csv"));
+
+        assertThatThrownBy(() -> payableImportationService.create(file))
+                .isInstanceOf(PayableImportEventPublishingException.class);
+
+        verify(payableImportPersistencePort).deleteById(1L);
+        verify(fileStoragePort).deleteFile("a1b2c3.csv");
+    }
 
     @Test
     void shouldUpdateImportationStatus() {

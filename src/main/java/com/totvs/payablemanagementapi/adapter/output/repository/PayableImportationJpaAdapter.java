@@ -26,6 +26,11 @@ public class PayableImportationJpaAdapter implements PayableImportPersistencePor
     }
 
     @Override
+    public void deleteById(long id) {
+        payableImportationRepository.deleteById(id);
+    }
+
+    @Override
     public List<PayableImportation> findAll() {
         return payableImportationRepository.findAll();
     }

@@ -8,6 +8,7 @@ import java.util.List;
 public interface PayableImportPersistencePort {
     PayableImportation save(PayableImportation payableImportation);
     PayableImportation findById(long id);
+    void deleteById(long id);
 
     List<PayableImportation> findAll();
     List<PayableImportationItem> findByPayableImportationId(long id);

@@ -5,6 +5,7 @@ import com.totvs.payablemanagementapi.core.port.input.PayableImportationServiceU
 import com.totvs.payablemanagementapi.core.port.input.dto.UpdatePayableImportationStatusDto;
 import com.totvs.payablemanagementapi.core.port.output.FileStoragePort;
 import com.totvs.payablemanagementapi.core.port.output.PayableImportPersistencePort;
+import com.totvs.payablemanagementapi.core.port.output.event.PayableImportEvent;
 import com.totvs.payablemanagementapi.core.port.output.event.PayableImportEventPublisher;
 import com.totvs.payablemanagementapi.domain.PayableImportation;
 import com.totvs.payablemanagementapi.domain.PayableImportationItem;
@@ -25,22 +26,29 @@ public class PayableImportationService implements PayableImportationServiceUseCa
 
     private final FileStoragePort fileStoragePort;
     private final PayableImportPersistencePort payableImportPersistencePort;
-    //private final PayableImportEventPublisher payableImportEventPublisher;
+    private final PayableImportEventPublisher payableImportEventPublisher;
 
 
     @Override
     public PayableImportation create(InputStream file) {
         PayableImportation payableImportation = PayableImportation.create();
-        log.error("Iniciando a importação de contas a pagar");
 
-        String filePath = fileStoragePort.saveCsvFile(file);
-        log.info("Arquivo CSV armazenado em {}", filePath);
+        String csvFilePath = fileStoragePort.saveCsvFile(file);
+        PayableImportation savedImportation = null;
 
-        PayableImportation savedImportation = payableImportPersistencePort.save(payableImportation);
-        log.info("Importação de contas a pagar criada com id {}", savedImportation.getId());
-        //payableImportEventPublisher.publish();
+        try {
+            savedImportation = payableImportPersistencePort.save(payableImportation);
+            payableImportEventPublisher.publish(new PayableImportEvent(
+                    savedImportation.getId(),
+                    csvFilePath
+            ));
 
-        return savedImportation;
+            return savedImportation;
+        } catch (RuntimeException exception) {
+            log.error("Falha ao criar ou publicar a importação", exception);
+            compensateCreation(savedImportation, csvFilePath);
+            throw exception;
+        }
     }
 
     @Override
@@ -89,5 +97,22 @@ public class PayableImportationService implements PayableImportationServiceUseCa
     @Override
     public List<PayableImportationItem> listPayableImportationItem(Long id) {
         return List.of();
+    }
+
+    private void compensateCreation(PayableImportation savedImportation, String csvFilePath) {
+        if (savedImportation != null && savedImportation.getId() != null) {
+            try {
+                payableImportPersistencePort.deleteById(savedImportation.getId());
+            } catch (RuntimeException exception) {
+                log.error("Falha ao remover a importação {} durante a compensação",
+                        savedImportation.getId(), exception);
+            }
+        }
+
+        try {
+            fileStoragePort.deleteFile(csvFilePath);
+        } catch (RuntimeException exception) {
+            log.error("Falha ao remover o arquivo {} durante a compensação", csvFilePath, exception);
+        }
     }
 }

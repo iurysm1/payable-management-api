@@ -14,10 +14,35 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 0
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:payable}
+    password: ${RABBITMQ_PASSWORD:payable}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1s
+          max-attempts: 3
+          max-interval: 10s
+        default-requeue-rejected: false
 
 app:
   file-storage:
     base-path: ${IMPORT_STORAGE_PATH:./data/imports}
+  rabbitmq:
+    payable-importation:
+      exchange: payable.importation
+      queue: payable.importation.requested
+      routing-key: payable.importation.requested
+      dead-letter-exchange: payable.importation.dlx
+      dead-letter-queue: payable.importation.requested.dlq
+      confirmation-timeout: 10s
 
 server:
   servlet:

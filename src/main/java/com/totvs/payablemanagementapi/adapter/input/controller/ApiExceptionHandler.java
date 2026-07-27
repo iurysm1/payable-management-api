@@ -1,6 +1,7 @@
 package com.totvs.payablemanagementapi.adapter.input.controller;
 
 import com.totvs.payablemanagementapi.core.exception.PayableNotFoundException;
+import com.totvs.payablemanagementapi.core.exception.PayableImportEventPublishingException;
 import com.totvs.payablemanagementapi.core.exception.InvalidDatePeriodCriteriaException;
 import com.totvs.payablemanagementapi.core.exception.SupplierInUseException;
 import com.totvs.payablemanagementapi.core.exception.SupplierNotFoundException;
@@ -41,6 +42,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(InvalidDatePeriodCriteriaException.class)
     public ProblemDetail handleInvalidDatePeriodCriteria(InvalidDatePeriodCriteriaException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(PayableImportEventPublishingException.class)
+    public ProblemDetail handlePayableImportEventPublishing(PayableImportEventPublishingException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
