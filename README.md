@@ -3,6 +3,7 @@
 API para gestão de fornecedores, contas a pagar, importações assíncronas por CSV e relatórios de pagamentos.
 
 O arquivo [`contas-teste-casos.zip`](contas-teste-casos.zip) contém CSVs de importação para testes.
+Antes de testar, verifique os id's de fornecedores (supplierId) para as importações acontecerem corretamente.
 
 ## Requisitos técnicos
 
@@ -42,6 +43,39 @@ curl -u "$APP_SECURITY_USERNAME:$APP_SECURITY_PASSWORD" \
 
 A API possui documentação Swagger. Acesse `http://localhost:8080/management/rest/swagger-ui/index.html`.
 
+## Decisões arquiteturais
+
+### Alteração do status da conta
+
+O sistema foi pensado para a gestão pessoal de contas a pagar. Como um lançamento ou uma alteração
+de status pode ser feito por engano, o status de uma conta pode ser corrigido a qualquer momento,
+sem restringir a mudança a uma sequência fixa entre `PENDENTE`, `PAGO` e `CANCELADO`. A regra de
+consistência é que toda conta `PAGO` tenha uma data de pagamento e que contas com os demais status
+não mantenham essa data.
+
+O tratamento da data depende do tipo de edição:
+
+- `PATCH /payable/{id}/status` altera somente o status e a data de pagamento. Ao mudar de outro
+  status para `PAGO` sem enviar `paymentDate`, o sistema define automaticamente a data atual. Se a
+  conta já estiver paga e nenhuma nova data for enviada, a data existente é preservada. Ao mudar
+  para um status diferente de `PAGO`, a data de pagamento é removida.
+- `PUT /payable/{id}` substitui os dados da conta e valida exatamente o estado enviado. Se o status
+  for alterado para `PAGO` com `paymentDate` nula, a API retorna `400 Bad Request` com a mensagem
+  `A data de pagamento é obrigatória quando uma conta está com status PAGO`.
+
+### Mensageria sem retry e DLQ
+
+A importação assíncrona utiliza uma fila durável principal, sem fila de erros (DLQ) e sem retry
+automático. Essa decisão é proposital para o escopo atual: mantém a topologia simples e evita o
+consumo de recursos e a complexidade operacional de filas adicionais para erros que não precisam
+ser reprocessados automaticamente.
+
+Falhas de uma linha ficam registradas no respectivo item com status `ERROR` e sua mensagem, enquanto
+uma falha que impede o processamento do arquivo deixa a importação com status `FAILED` e o motivo
+correspondente. Assim, é possível identificar o dado ou comportamento que falhou, corrigi-lo no
+arquivo ou no código e enviar uma nova importação. O trade-off dessa escolha é que a recuperação é
+manual, em vez de ocorrer por retentativas ou encaminhamento automático para uma DLQ.
+
 ## Catálogo funcional
 
 ### Fornecedores
@@ -50,7 +84,7 @@ A API possui documentação Swagger. Acesse `http://localhost:8080/management/re
 | --- | --- | --- |
 | `GET` | `/supplier` | Listar fornecedores com paginação e ordenação. |
 | `GET` | `/supplier/{id}` | Consultar um fornecedor. |
-| `POST` | `/supplier` | Cadastrar um fornecedor. |
+| `POST` | `/supplier` | Criar um fornecedor com nome obrigatório para associá-lo às contas. |
 | `PUT` | `/supplier/{id}` | Atualizar um fornecedor usando o ID da rota. |
 | `DELETE` | `/supplier/{id}` | Excluir fornecedor sem contas vinculadas. |
 
@@ -60,12 +94,12 @@ O nome é obrigatório. A exclusão retorna `409 Conflict` quando o fornecedor p
 
 | Método | Rota | Função |
 | --- | --- | --- |
-| `GET` | `/payable` | Listar e filtrar contas com paginação. |
+| `GET` | `/payable` | Listar contas com paginação e filtros por descrição, vencimento e status. |
 | `GET` | `/payable/{id}` | Consultar uma conta. |
 | `POST` | `/payable` | Criar uma conta. |
 | `PUT` | `/payable/{id}` | Atualizar uma conta usando o ID da rota. |
 | `DELETE` | `/payable/{id}` | Excluir uma conta. |
-| `PATCH` | `/payable/{id}/status` | Alterar somente status e data de pagamento. |
+| `PATCH` | `/payable/{id}/status` | Alterar somente o status, aplicando o tratamento específico da data de pagamento. |
 
 Filtros disponíveis em `GET /payable`:
 
@@ -79,9 +113,11 @@ Regras principais:
 - Descrição, valor e fornecedor são obrigatórios.
 - O valor não pode ser negativo.
 - O status padrão é `PENDENTE`.
-- Uma conta `PAGO` precisa de `paymentDate`; os outros status mantêm essa data nula.
+- Na criação e na edição completa por `PUT`, uma conta `PAGO` precisa de `paymentDate`; os outros
+  status mantêm essa data nula.
 - No PATCH, os códigos são `0=PENDENTE`, `1=PAGO` e `2=CANCELADO`.
-- Ao mudar para `PAGO` sem data, o sistema utiliza a data atual; se já estava paga, preserva a data existente.
+- No `PATCH`, ao mudar para `PAGO` sem data, o sistema utiliza a data atual; se a conta já estava
+  paga, preserva a data existente.
 
 ### Importação assíncrona
 
@@ -90,7 +126,7 @@ Regras principais:
 | `GET` | `/import/payable` | Listar importações. |
 | `GET` | `/import/payable/{id}` | Acompanhar uma importação. |
 | `GET` | `/import/payable/{id}/items` | Consultar o resultado das linhas. |
-| `POST` | `/import/payable` | Enviar um CSV em `multipart/form-data`. |
+| `POST` | `/import/payable` | Enviar um CSV para criar contas de forma assíncrona. |
 
 O `POST` salva o CSV, cria uma importação `PENDING`, publica um evento no RabbitMQ e responde `201 Created`.
 Essa resposta confirma a aceitação, não a conclusão do processamento.
@@ -128,7 +164,7 @@ São aceitos campos com aspas duplas e aspas escapadas. Linhas em branco são ig
 
 | Método | Rota | Função |
 | --- | --- | --- |
-| `GET` | `/report/total-paid` | Consolidar contas pagas em um período. |
+| `GET` | `/report/total-paid` | Consolidar contas pagas por período e, opcionalmente, por fornecedor. |
 
 `startDate` e `endDate` são obrigatórias e inclusivas. `supplierId` é opcional. O relatório retorna
 total pago, quantidade e itens considerados; quando não há contas pagas, retorna `404 Not Found`.
