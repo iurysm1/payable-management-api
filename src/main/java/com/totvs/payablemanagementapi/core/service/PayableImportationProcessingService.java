@@ -60,6 +60,8 @@ public class PayableImportationProcessingService implements PayableImportationPr
         } catch (Exception exception) {
             log.error("Falha ao processar a importação {}", payableImportationId, exception);
             updateAsFailed(payableImportationId, exception);
+        } finally {
+            deleteCsvFile(event);
         }
     }
 
@@ -237,6 +239,25 @@ public class PayableImportationProcessingService implements PayableImportationPr
             );
         } catch (Exception statusException) {
             log.error("Falha ao atualizar a importação {} para FAILED", payableImportationId, statusException);
+        }
+    }
+
+    private void deleteCsvFile(PayableImportEvent event) {
+        if (event == null
+                || event.payableImportationCsvFilePath() == null
+                || event.payableImportationCsvFilePath().isBlank()) {
+            return;
+        }
+
+        try {
+            fileStoragePort.deleteFile(event.payableImportationCsvFilePath());
+        } catch (RuntimeException exception) {
+            log.error(
+                    "Falha ao remover o arquivo {} após o processamento da importação {}",
+                    event.payableImportationCsvFilePath(),
+                    event.payableImportationId(),
+                    exception
+            );
         }
     }
 

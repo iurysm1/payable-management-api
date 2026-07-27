@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class LocalFileStorageAdapterTest {
@@ -52,6 +53,14 @@ class LocalFileStorageAdapterTest {
         assertThatThrownBy(() -> storage.getFile("missing.csv"))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Não foi possível ler o arquivo: missing.csv");
+    }
+
+    @Test
+    void shouldIgnoreDeletionWhenFileDoesNotExist() {
+        LocalFileStorageAdapter storage = new LocalFileStorageAdapter(temporaryDirectory.toString());
+
+        assertThatCode(() -> storage.deleteFile("missing.csv"))
+                .doesNotThrowAnyException();
     }
 
 }

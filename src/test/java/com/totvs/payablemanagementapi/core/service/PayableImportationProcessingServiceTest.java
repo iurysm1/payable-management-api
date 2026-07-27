@@ -82,6 +82,7 @@ class PayableImportationProcessingServiceTest {
         verify(payableImportationServiceUseCase, times(2)).updateStatus(eq(1L), statusCaptor.capture());
         verify(payableUseCase).save(payableDto);
         verify(payableImportPersistencePort).saveItem(itemCaptor.capture());
+        verify(fileStoragePort).deleteFile("a1b2c3.csv");
 
         assertThat(statusCaptor.getAllValues())
                 .extracting(UpdatePayableImportationStatusDto::status)
@@ -134,6 +135,7 @@ class PayableImportationProcessingServiceTest {
         verify(payableUseCase).save(invalidDto);
         verify(payableUseCase).save(validDto);
         verify(payableImportPersistencePort, times(2)).saveItem(itemCaptor.capture());
+        verify(fileStoragePort).deleteFile("a1b2c3.csv");
 
         assertThat(statusCaptor.getAllValues())
                 .extracting(UpdatePayableImportationStatusDto::status)
@@ -162,6 +164,7 @@ class PayableImportationProcessingServiceTest {
         ArgumentCaptor<UpdatePayableImportationStatusDto> statusCaptor =
                 ArgumentCaptor.forClass(UpdatePayableImportationStatusDto.class);
         verify(payableImportationServiceUseCase, times(2)).updateStatus(eq(1L), statusCaptor.capture());
+        verify(fileStoragePort).deleteFile("a1b2c3.csv");
 
         assertThat(statusCaptor.getAllValues())
                 .extracting(UpdatePayableImportationStatusDto::status)
@@ -186,7 +189,33 @@ class PayableImportationProcessingServiceTest {
                 org.mockito.ArgumentMatchers.eq(1L),
                 org.mockito.ArgumentMatchers.any(UpdatePayableImportationStatusDto.class)
         );
-        verifyNoInteractions(payableUseCase, payableImportPersistencePort, fileStoragePort);
+        verify(fileStoragePort).deleteFile("a1b2c3.csv");
+        verifyNoInteractions(payableUseCase, payableImportPersistencePort);
+    }
+
+    @Test
+    void shouldCompleteProcessingWhenCsvDeletionFails() {
+        PayableImportEvent event = new PayableImportEvent(1L, "a1b2c3.csv");
+        when(payableImportationServiceUseCase.findById(1L)).thenReturn(PayableImportation.create());
+        when(fileStoragePort.getFile("a1b2c3.csv")).thenReturn(csv(
+                "description,amount,status,expirationDate,paymentDate,supplierId\n"
+        ));
+        doThrow(new FileStorageException("Sem permissão para remover o arquivo"))
+                .when(fileStoragePort).deleteFile("a1b2c3.csv");
+
+        processingService.process(event);
+
+        ArgumentCaptor<UpdatePayableImportationStatusDto> statusCaptor =
+                ArgumentCaptor.forClass(UpdatePayableImportationStatusDto.class);
+        verify(payableImportationServiceUseCase, times(2)).updateStatus(eq(1L), statusCaptor.capture());
+        verify(fileStoragePort).deleteFile("a1b2c3.csv");
+
+        assertThat(statusCaptor.getAllValues())
+                .extracting(UpdatePayableImportationStatusDto::status)
+                .containsExactly(
+                        StatusPayableImportationEnum.PROCESSING.getCode(),
+                        StatusPayableImportationEnum.COMPLETED.getCode()
+                );
     }
 
     private ByteArrayInputStream csv(String content) {
