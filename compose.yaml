@@ -31,6 +31,33 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    image: payable-management-api:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/payable_management
+      DB_USERNAME: payable
+      DB_PASSWORD: payable
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: payable
+      RABBITMQ_PASSWORD: payable
+      APP_SECURITY_USERNAME: ${APP_SECURITY_USERNAME:-totvs}
+      APP_SECURITY_PASSWORD: ${APP_SECURITY_PASSWORD:-totvs}
+      IMPORT_STORAGE_PATH: /app/data/imports
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      - payable-imports:/app/data/imports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   postgres-data:
   rabbitmq-data:
+  payable-imports:

@@ -1,0 +1,1841 @@
+{
+  "components": {
+    "schemas": {
+      "PageableResponse": {
+        "description": "Metadados da solicitação de página.",
+        "properties": {
+          "offset": {
+            "description": "Deslocamento do primeiro registro.",
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "pageNumber": {
+            "description": "Número da página, iniciado em zero.",
+            "example": 0,
+            "format": "int32",
+            "type": "integer"
+          },
+          "pageSize": {
+            "description": "Quantidade solicitada por página.",
+            "example": 20,
+            "format": "int32",
+            "type": "integer"
+          },
+          "paged": {
+            "description": "Indica uma consulta paginada.",
+            "example": true,
+            "type": "boolean"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortResponse",
+            "description": "Ordenação solicitada."
+          },
+          "unpaged": {
+            "description": "Indica uma consulta não paginada.",
+            "example": false,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "PaidPayableItemResponse": {
+        "description": "Conta paga incluída no relatório.",
+        "properties": {
+          "amount": {
+            "description": "Valor pago.",
+            "example": 1500.0,
+            "type": "number"
+          },
+          "description": {
+            "description": "Descrição da conta.",
+            "example": "Pagamento de aluguel",
+            "type": "string"
+          },
+          "expirationDate": {
+            "description": "Data de vencimento.",
+            "example": "2026-08-10",
+            "format": "date",
+            "type": "string"
+          },
+          "paymentDate": {
+            "description": "Data do pagamento.",
+            "example": "2026-08-05",
+            "format": "date",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status da conta.",
+            "enum": [
+              "PAGO"
+            ],
+            "example": "PAGO",
+            "type": "string"
+          },
+          "supplierName": {
+            "description": "Nome do fornecedor.",
+            "example": "TOTVS",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PayableImportCsvRequest": {
+        "description": "Arquivo CSV de contas a pagar.",
+        "properties": {
+          "file": {
+            "description": "CSV UTF-8 com cabeçalho obrigatório:\ndescription,amount,status,expirationDate,paymentDate,supplierId\n",
+            "format": "binary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "type": "object"
+      },
+      "PayableImportationItemResponse": {
+        "description": "Resultado do processamento de uma linha do CSV.",
+        "properties": {
+          "errorMessage": {
+            "description": "Motivo da rejeição quando o item possui ERROR.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Identificador do item.",
+            "example": 10,
+            "format": "int64",
+            "type": "integer"
+          },
+          "payableId": {
+            "description": "Conta criada quando o item possui SUCCESS.",
+            "example": 25,
+            "format": "int64",
+            "type": "integer"
+          },
+          "payableImportationId": {
+            "description": "Importação à qual o item pertence.",
+            "example": 1,
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "description": "Resultado da linha.",
+            "enum": [
+              "SUCCESS",
+              "ERROR"
+            ],
+            "example": "SUCCESS",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PayableImportationResponse": {
+        "description": "Importação assíncrona de contas a pagar.",
+        "properties": {
+          "createdAt": {
+            "description": "Data e hora de criação.",
+            "example": "2026-08-01T10:15:30",
+            "type": "string"
+          },
+          "errorMessage": {
+            "description": "Erro global quando a importação estiver em FAILED.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Identificador da importação.",
+            "example": 1,
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "description": "Estado do processamento assíncrono.",
+            "enum": [
+              "PENDING",
+              "PROCESSING",
+              "COMPLETED",
+              "COMPLETED_WITH_ERRORS",
+              "FAILED"
+            ],
+            "example": "PENDING",
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "Data e hora da última atualização.",
+            "example": "2026-08-01T10:15:35",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PayablePageResponse": {
+        "description": "Página de contas a pagar.",
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/PayableResponse"
+            },
+            "type": "array"
+          },
+          "empty": {
+            "type": "boolean"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "number": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "numberOfElements": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableResponse"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortResponse"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PayableRequest": {
+        "description": "Dados para criação ou atualização de uma conta a pagar.",
+        "properties": {
+          "amount": {
+            "description": "Valor monetário não negativo, com até duas casas decimais.",
+            "example": 1500.0,
+            "minimum": 0,
+            "type": "number"
+          },
+          "description": {
+            "description": "Descrição da conta a pagar.",
+            "example": "Pagamento de aluguel",
+            "type": "string"
+          },
+          "expirationDate": {
+            "description": "Data de vencimento no formato ISO-8601.",
+            "example": "2026-08-10",
+            "format": "date",
+            "type": "string"
+          },
+          "paymentDate": {
+            "description": "Data do pagamento, obrigatória somente para status PAGO.",
+            "example": "2026-08-05",
+            "format": "date",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status da conta. Quando omitido, assume PENDENTE. PAGO exige paymentDate;\nos demais status não admitem data de pagamento.\n",
+            "enum": [
+              "PENDENTE",
+              "PAGO",
+              "CANCELADO"
+            ],
+            "example": "PENDENTE",
+            "type": "string"
+          },
+          "supplierId": {
+            "description": "Identificador de um fornecedor existente.",
+            "example": 1,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "amount",
+          "description",
+          "supplierId"
+        ],
+        "type": "object"
+      },
+      "PayableResponse": {
+        "description": "Conta a pagar persistida.",
+        "properties": {
+          "amount": {
+            "description": "Valor da conta.",
+            "example": 1500.0,
+            "type": "number"
+          },
+          "description": {
+            "description": "Descrição da conta.",
+            "example": "Pagamento de aluguel",
+            "type": "string"
+          },
+          "expirationDate": {
+            "description": "Data de vencimento.",
+            "example": "2026-08-10",
+            "format": "date",
+            "type": "string"
+          },
+          "id": {
+            "description": "Identificador da conta.",
+            "example": 1,
+            "format": "int64",
+            "type": "integer"
+          },
+          "paymentDate": {
+            "description": "Data do pagamento, quando a conta estiver paga.",
+            "example": "2026-08-05",
+            "format": "date",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status atual da conta.",
+            "enum": [
+              "PENDENTE",
+              "PAGO",
+              "CANCELADO"
+            ],
+            "example": "PENDENTE",
+            "type": "string"
+          },
+          "supplier": {
+            "$ref": "#/components/schemas/SupplierResponse",
+            "description": "Fornecedor vinculado."
+          }
+        },
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "description": "Erro HTTP no formato RFC 9457.",
+        "properties": {
+          "detail": {
+            "description": "Explicação específica do erro.",
+            "example": "Dados inválidos",
+            "type": "string"
+          },
+          "instance": {
+            "description": "URI da requisição que originou o erro.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Código HTTP.",
+            "example": 400,
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Título correspondente ao status HTTP.",
+            "example": "Bad Request",
+            "type": "string"
+          },
+          "type": {
+            "description": "Identificador do tipo do problema.",
+            "example": "about:blank",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SortResponse": {
+        "description": "Estado da ordenação da página.",
+        "properties": {
+          "empty": {
+            "description": "Indica se não há ordenação.",
+            "example": true,
+            "type": "boolean"
+          },
+          "sorted": {
+            "description": "Indica se existe ordenação.",
+            "example": false,
+            "type": "boolean"
+          },
+          "unsorted": {
+            "description": "Indica se a consulta está sem ordenação.",
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "SupplierPageResponse": {
+        "description": "Página de fornecedores.",
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/SupplierResponse"
+            },
+            "type": "array"
+          },
+          "empty": {
+            "type": "boolean"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "number": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "numberOfElements": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableResponse"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortResponse"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "SupplierRequest": {
+        "description": "Dados para criação ou atualização de um fornecedor.",
+        "properties": {
+          "name": {
+            "description": "Nome do fornecedor.",
+            "example": "TOTVS",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "SupplierResponse": {
+        "description": "Fornecedor cadastrado.",
+        "properties": {
+          "id": {
+            "description": "Identificador do fornecedor.",
+            "example": 1,
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Nome do fornecedor.",
+            "example": "TOTVS",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TotalPaidReportResponse": {
+        "description": "Consolidação das contas pagas no período.",
+        "properties": {
+          "endDate": {
+            "description": "Fim do período.",
+            "example": "2026-08-31",
+            "format": "date",
+            "type": "string"
+          },
+          "paidCount": {
+            "description": "Quantidade de contas pagas.",
+            "example": 2,
+            "format": "int32",
+            "type": "integer"
+          },
+          "paidPayableItems": {
+            "description": "Contas consideradas no cálculo.",
+            "items": {
+              "$ref": "#/components/schemas/PaidPayableItemResponse"
+            },
+            "type": "array"
+          },
+          "startDate": {
+            "description": "Início do período.",
+            "example": "2026-08-01",
+            "format": "date",
+            "type": "string"
+          },
+          "totalPaid": {
+            "description": "Soma dos valores pagos.",
+            "example": 2390.9,
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "UpdatePayableStatusRequest": {
+        "description": "Alteração pontual do status de uma conta.",
+        "properties": {
+          "paymentDate": {
+            "description": "Data de pagamento. Ao mudar para PAGO, a data atual é usada quando omitida.\nPara outro status, a data armazenada é removida.\n",
+            "example": "2026-08-10",
+            "format": "date",
+            "type": "string"
+          },
+          "status": {
+            "description": "Código do status: 0=PENDENTE, 1=PAGO, 2=CANCELADO.",
+            "example": 1,
+            "format": "int32",
+            "maximum": 2,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "description": "Credenciais configuradas por APP_SECURITY_USERNAME e APP_SECURITY_PASSWORD.",
+        "scheme": "basic",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "API para gestão de fornecedores, contas a pagar, importações assíncronas em CSV\ne relatórios de pagamentos. Todos os recursos exigem autenticação HTTP Basic.\n",
+    "title": "Payable Management API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/import/payable": {
+      "get": {
+        "description": "Retorna todas as importações de contas a pagar e seus estados atuais.",
+        "operationId": "listPayableImportations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PayableImportationResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Importações existentes."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          }
+        },
+        "summary": "Listar importações",
+        "tags": [
+          "Importações"
+        ]
+      },
+      "post": {
+        "description": "Recebe um CSV UTF-8, salva o arquivo, cria uma importação PENDING e publica um\nevento no RabbitMQ. O 201 confirma a aceitação, não o término. O consumidor muda\no estado para PROCESSING e depois COMPLETED, COMPLETED_WITH_ERRORS ou FAILED.\n\nCabeçalho obrigatório:\n`description,amount,status,expirationDate,paymentDate,supplierId`.\nOs status aceitos são PENDENTE, PAGO e CANCELADO; datas usam `yyyy-MM-dd`.\nLinhas em branco são ignoradas e campos podem usar aspas duplas.\n",
+        "operationId": "createPayableImportation",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PayableImportCsvRequest"
+              }
+            }
+          },
+          "description": "Arquivo CSV com extensão .csv.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayableImportationResponse"
+                }
+              }
+            },
+            "description": "Importação aceita e aguardando processamento."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Dados inválidos",
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Arquivo ausente, vazio ou sem extensão CSV."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "O tipo de mídia enviado não é suportado para a importação",
+                  "status": 415,
+                  "title": "Unsupported Media Type",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Requisição não usa multipart/form-data."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Não foi possível publicar o evento de importação",
+                  "status": 500,
+                  "title": "Internal Server Error",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Falha ao armazenar o arquivo ou publicar o evento."
+          }
+        },
+        "summary": "Importar contas por CSV",
+        "tags": [
+          "Importações"
+        ]
+      }
+    },
+    "/import/payable/{id}": {
+      "get": {
+        "description": "Retorna uma importação pelo identificador para acompanhamento assíncrono.",
+        "operationId": "findPayableImportationById",
+        "parameters": [
+          {
+            "description": "Identificador da importação.",
+            "example": 1,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayableImportationResponse"
+                }
+              }
+            },
+            "description": "Importação encontrada."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Importação não encontrada."
+          }
+        },
+        "summary": "Consultar importação",
+        "tags": [
+          "Importações"
+        ]
+      }
+    },
+    "/import/payable/{id}/items": {
+      "get": {
+        "description": "Retorna o resultado de cada linha processada. SUCCESS possui payableId;\nERROR possui errorMessage e não cria uma conta.\n",
+        "operationId": "listPayableImportationItems",
+        "parameters": [
+          {
+            "description": "Identificador da importação.",
+            "example": 1,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PayableImportationItemResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Itens processados da importação."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Importação não encontrada."
+          }
+        },
+        "summary": "Listar itens da importação",
+        "tags": [
+          "Importações"
+        ]
+      }
+    },
+    "/payable": {
+      "get": {
+        "description": "Retorna contas paginadas. As datas filtram o vencimento e devem ser informadas\njuntas; a data inicial não pode ser posterior à final.\n",
+        "operationId": "listPayables",
+        "parameters": [
+          {
+            "description": "Número da página, iniciado em zero.",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Quantidade de registros por página.",
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "default": 20,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Ordenação no formato propriedade,direção. Pode ser repetido.",
+            "example": "expirationDate,asc",
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Trecho da descrição, sem distinção entre maiúsculas e minúsculas.",
+            "example": "aluguel",
+            "in": "query",
+            "name": "description",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Início opcional do período de vencimento.",
+            "example": "2026-08-01",
+            "in": "query",
+            "name": "startDate",
+            "required": false,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Fim opcional do período de vencimento.",
+            "example": "2026-08-31",
+            "in": "query",
+            "name": "endDate",
+            "required": false,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Status por nome, sem distinção entre maiúsculas e minúsculas.",
+            "example": "PAGO",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PENDENTE",
+                "PAGO",
+                "CANCELADO"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayablePageResponse"
+                }
+              }
+            },
+            "description": "Página de contas a pagar."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Dados inválidos",
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Filtro de status ou período inválido."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          }
+        },
+        "summary": "Listar contas a pagar",
+        "tags": [
+          "Contas a pagar"
+        ]
+      },
+      "post": {
+        "description": "Cadastra uma conta para um fornecedor existente. O status padrão é PENDENTE.\nUma conta PAGO exige paymentDate e outros status exigem essa data nula.\n",
+        "operationId": "createPayable",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "amount": 1500.0,
+                "description": "Pagamento de aluguel",
+                "expirationDate": "2026-08-10",
+                "status": "PENDENTE",
+                "supplierId": 1
+              },
+              "schema": {
+                "$ref": "#/components/schemas/PayableRequest"
+              }
+            }
+          },
+          "description": "Dados da nova conta a pagar.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayableResponse"
+                }
+              }
+            },
+            "description": "Conta a pagar criada."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Dados inválidos",
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Dados violam uma regra da conta a pagar."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Fornecedor informado não existe."
+          }
+        },
+        "summary": "Criar conta a pagar",
+        "tags": [
+          "Contas a pagar"
+        ]
+      }
+    },
+    "/payable/{id}": {
+      "delete": {
+        "description": "Exclui definitivamente uma conta a pagar existente.",
+        "operationId": "deletePayable",
+        "parameters": [
+          {
+            "description": "Identificador da conta a pagar.",
+            "example": 1,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Conta a pagar excluída."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conta a pagar não encontrada."
+          }
+        },
+        "summary": "Excluir conta a pagar",
+        "tags": [
+          "Contas a pagar"
+        ]
+      },
+      "get": {
+        "description": "Retorna uma conta a pagar e o fornecedor associado.",
+        "operationId": "findPayableById",
+        "parameters": [
+          {
+            "description": "Identificador da conta a pagar.",
+            "example": 1,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayableResponse"
+                }
+              }
+            },
+            "description": "Conta a pagar encontrada."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conta a pagar não encontrada."
+          }
+        },
+        "summary": "Consultar conta a pagar",
+        "tags": [
+          "Contas a pagar"
+        ]
+      },
+      "put": {
+        "description": "Substitui os dados da conta. O identificador da rota prevalece sobre eventual id do corpo.",
+        "operationId": "updatePayable",
+        "parameters": [
+          {
+            "description": "Identificador da conta a pagar.",
+            "example": 1,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "amount": 1500.0,
+                "description": "Pagamento de aluguel",
+                "expirationDate": "2026-08-10",
+                "status": "PENDENTE",
+                "supplierId": 1
+              },
+              "schema": {
+                "$ref": "#/components/schemas/PayableRequest"
+              }
+            }
+          },
+          "description": "Novos dados da conta a pagar.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayableResponse"
+                }
+              }
+            },
+            "description": "Conta a pagar atualizada."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Dados inválidos",
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Dados violam uma regra da conta a pagar."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conta ou fornecedor não encontrado."
+          }
+        },
+        "summary": "Atualizar conta a pagar",
+        "tags": [
+          "Contas a pagar"
+        ]
+      }
+    },
+    "/payable/{id}/status": {
+      "patch": {
+        "description": "Atualiza somente o status. Ao passar para PAGO sem paymentDate, utiliza a data atual\nou preserva a data anterior se a conta já estava paga. Outros status removem a data.\n",
+        "operationId": "updatePayableStatus",
+        "parameters": [
+          {
+            "description": "Identificador da conta a pagar.",
+            "example": 1,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "paymentDate": "2026-08-10",
+                "status": 1
+              },
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePayableStatusRequest"
+              }
+            }
+          },
+          "description": "Código do novo status e data de pagamento opcional.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayableResponse"
+                }
+              }
+            },
+            "description": "Status atualizado ou conta retornada sem alteração."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Dados inválidos",
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Código de status ausente, inexistente ou combinação inválida."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conta a pagar não encontrada."
+          }
+        },
+        "summary": "Alterar status da conta",
+        "tags": [
+          "Contas a pagar"
+        ]
+      }
+    },
+    "/report/total-paid": {
+      "get": {
+        "description": "Consolida as contas com status PAGO cuja paymentDate esteja no período inclusivo.\nsupplierId é opcional; startDate e endDate são obrigatórias e devem formar um\nperíodo válido.\n",
+        "operationId": "generateTotalPaidReport",
+        "parameters": [
+          {
+            "description": "Fornecedor opcional para restringir o relatório.",
+            "example": 1,
+            "in": "query",
+            "name": "supplierId",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Data inicial inclusiva no formato ISO-8601.",
+            "example": "2026-08-01",
+            "in": "query",
+            "name": "startDate",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Data final inclusiva no formato ISO-8601.",
+            "example": "2026-08-31",
+            "in": "query",
+            "name": "endDate",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotalPaidReportResponse"
+                }
+              }
+            },
+            "description": "Relatório consolidado."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Dados inválidos",
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Período ausente ou inválido."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Fornecedor não existe ou não há pagamentos no período."
+          }
+        },
+        "summary": "Gerar relatório de pagamentos",
+        "tags": [
+          "Relatórios"
+        ]
+      }
+    },
+    "/supplier": {
+      "get": {
+        "description": "Retorna os fornecedores em uma página com ordenação opcional.",
+        "operationId": "listSuppliers",
+        "parameters": [
+          {
+            "description": "Número da página, iniciado em zero.",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Quantidade de registros por página.",
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "default": 20,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Ordenação no formato propriedade,direção. Pode ser repetido.",
+            "example": "name,asc",
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierPageResponse"
+                }
+              }
+            },
+            "description": "Página de fornecedores."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          }
+        },
+        "summary": "Listar fornecedores",
+        "tags": [
+          "Fornecedores"
+        ]
+      },
+      "post": {
+        "description": "Cadastra um fornecedor com nome obrigatório.",
+        "operationId": "createSupplier",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "name": "TOTVS"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/SupplierRequest"
+              }
+            }
+          },
+          "description": "Dados do novo fornecedor.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierResponse"
+                }
+              }
+            },
+            "description": "Fornecedor criado."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Dados inválidos",
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Nome ausente ou inválido."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          }
+        },
+        "summary": "Criar fornecedor",
+        "tags": [
+          "Fornecedores"
+        ]
+      }
+    },
+    "/supplier/{id}": {
+      "delete": {
+        "description": "Exclui um fornecedor que não possua contas a pagar vinculadas.",
+        "operationId": "deleteSupplier",
+        "parameters": [
+          {
+            "description": "Identificador do fornecedor.",
+            "example": 1,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Fornecedor excluído."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Fornecedor não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "O recurso possui vínculos e não pode ser excluído",
+                  "status": 409,
+                  "title": "Conflict",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Fornecedor possui contas vinculadas."
+          }
+        },
+        "summary": "Excluir fornecedor",
+        "tags": [
+          "Fornecedores"
+        ]
+      },
+      "get": {
+        "description": "Retorna um fornecedor pelo identificador.",
+        "operationId": "findSupplierById",
+        "parameters": [
+          {
+            "description": "Identificador do fornecedor.",
+            "example": 1,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierResponse"
+                }
+              }
+            },
+            "description": "Fornecedor encontrado."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Fornecedor não encontrado."
+          }
+        },
+        "summary": "Consultar fornecedor",
+        "tags": [
+          "Fornecedores"
+        ]
+      },
+      "put": {
+        "description": "Atualiza o nome do fornecedor. O identificador da rota prevalece sobre eventual id do corpo.",
+        "operationId": "updateSupplier",
+        "parameters": [
+          {
+            "description": "Identificador do fornecedor.",
+            "example": 1,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "name": "TOTVS"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/SupplierRequest"
+              }
+            }
+          },
+          "description": "Novos dados do fornecedor.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierResponse"
+                }
+              }
+            },
+            "description": "Fornecedor atualizado."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Dados inválidos",
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Nome ausente ou inválido."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Credenciais de autenticação ausentes ou inválidas",
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Credenciais ausentes ou inválidas."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "detail": "Recurso não encontrado",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Fornecedor não encontrado."
+          }
+        },
+        "summary": "Atualizar fornecedor",
+        "tags": [
+          "Fornecedores"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Servidor da aplicação",
+      "url": "/management/rest"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Cadastro, consulta, atualização e exclusão de fornecedores.",
+      "name": "Fornecedores"
+    },
+    {
+      "description": "Gestão do ciclo de vida das contas a pagar.",
+      "name": "Contas a pagar"
+    },
+    {
+      "description": "Importação assíncrona de contas a pagar por CSV e acompanhamento do\nprocessamento e de seus itens.\n",
+      "name": "Importações"
+    },
+    {
+      "description": "Relatórios consolidados de contas efetivamente pagas.",
+      "name": "Relatórios"
+    }
+  ]
+}

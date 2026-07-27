@@ -44,6 +44,22 @@ server:
   servlet:
     context-path: /management/rest
 
+springdoc:
+  api-docs:
+    version: OPENAPI_3_1
+  writer-with-default-pretty-printer: true
+  packages-to-scan: com.totvs.payablemanagementapi.adapter.input.controller
+  paths-to-match:
+    - /supplier/**
+    - /payable/**
+    - /import/payable/**
+    - /report/**
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    operations-sorter: method
+    tags-sorter: alpha
+
 logging:
   level:
     com.totvs.payablemanagementapi: INFO
