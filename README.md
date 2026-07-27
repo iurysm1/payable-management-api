@@ -2,23 +2,18 @@
 
 API para gestão de fornecedores, contas a pagar, importações assíncronas por CSV e relatórios de pagamentos.
 
+O arquivo [`contas-teste-casos.zip`](contas-teste-casos.zip) contém CSVs de importação para testes.
+
 ## Requisitos técnicos
 
 - Java 21.
-- Docker e Docker Compose para PostgreSQL, RabbitMQ e Redocly CLI.
-- `curl` e `jq` para exportar e comparar o contrato OpenAPI.
+- Docker e Docker Compose para executar a aplicação, o PostgreSQL, o RabbitMQ e o Redocly CLI.
 - Maven Wrapper incluído no repositório.
 
 O projeto usa Spring Boot 3.5, Springdoc OpenAPI 2.8, OpenAPI 3.1, Swagger UI e Redocly CLI 2.40.
 O Redocly é executado pela imagem Docker versionada; não é necessário instalar Node.js ou npm.
 
 ## Inicialização
-
-Suba PostgreSQL e RabbitMQ:
-
-```bash
-docker compose up -d
-```
 
 Defina as credenciais HTTP Basic:
 
@@ -27,10 +22,11 @@ export APP_SECURITY_USERNAME=payable
 export APP_SECURITY_PASSWORD=change-me
 ```
 
-Inicie a aplicação:
+Inicie todo o ambiente com Docker Compose. Ele sobe a aplicação e as dependências de infraestrutura
+(PostgreSQL e RabbitMQ), já configuradas para se comunicarem entre si:
 
 ```bash
-./mvnw spring-boot:run
+docker compose up -d --build
 ```
 
 A API estará disponível em `http://localhost:8080/management/rest`.
@@ -44,17 +40,7 @@ curl -u "$APP_SECURITY_USERNAME:$APP_SECURITY_PASSWORD" \
 
 ## Documentação da API
 
-Toda a documentação exige as mesmas credenciais HTTP Basic da API.
-
-| Recurso | URL |
-| --- | --- |
-| Swagger UI | `http://localhost:8080/management/rest/swagger-ui.html` |
-| Redoc | `http://localhost:8080/management/rest/redoc.html` |
-| OpenAPI JSON | `http://localhost:8080/management/rest/v3/api-docs` |
-| OpenAPI YAML | `http://localhost:8080/management/rest/v3/api-docs.yaml` |
-
-O código e as anotações dos controllers são a fonte do contrato. O arquivo
-`docs/openapi.json` é um snapshot versionado e não deve ser editado manualmente.
+A API possui documentação Swagger. Acesse `http://localhost:8080/management/rest/swagger-ui/index.html`.
 
 ## Catálogo funcional
 
@@ -121,6 +107,13 @@ Itens processados com sucesso recebem `SUCCESS` e o `payableId` criado. Linhas r
 `ERROR` e uma mensagem, sem interromper as demais. Falhas globais de arquivo ou cabeçalho levam a
 importação para `FAILED`.
 
+`COMPLETED_WITH_ERRORS` indica que o arquivo foi processado até o fim, mas uma ou mais linhas foram
+rejeitadas. As linhas válidas continuam sendo importadas e recebem `SUCCESS`; as inválidas recebem
+`ERROR`, com o motivo da rejeição, e não geram uma conta a pagar. Consulte
+`GET /import/payable/{id}/items` para identificar e corrigir somente as linhas com erro antes de
+enviá-las novamente. Esse status é diferente de `FAILED`, que representa uma falha global e impede
+o processamento completo do arquivo.
+
 O CSV usa UTF-8, vírgula como separador, datas `yyyy-MM-dd` e este cabeçalho exato:
 
 ```csv
@@ -140,32 +133,6 @@ São aceitos campos com aspas duplas e aspas escapadas. Linhas em branco são ig
 `startDate` e `endDate` são obrigatórias e inclusivas. `supplierId` é opcional. O relatório retorna
 total pago, quantidade e itens considerados; quando não há contas pagas, retorna `404 Not Found`.
 
-## Atualização e validação do OpenAPI
-
-Com a aplicação em execução e as credenciais exportadas:
-
-```bash
-# Atualizar docs/openapi.json a partir do código
-./docs/openapi.sh export
-
-# Falhar caso o snapshot esteja diferente do endpoint atual
-./docs/openapi.sh check
-
-# Validar redocly.yaml e executar as regras de governança
-./docs/openapi.sh lint
-
-# Gerar src/main/resources/static/redoc.html
-./docs/openapi.sh build
-
-# Exportar, validar e construir em sequência
-./docs/openapi.sh all
-```
-
-Para consultar outra instância, defina `OPENAPI_URL` antes de `export`, `check` ou `all`.
-
-As regras do Redocly exigem descrições, resumos, `operationId`, parâmetros documentados, tags,
-segurança válida e pelo menos uma resposta `4xx` em cada operação.
-
 ## Testes
 
 ```bash
@@ -178,5 +145,3 @@ A suíte inclui um teste de contrato que:
 - exige as 16 operações, 4 tags e o esquema `basicAuth`;
 - verifica respostas relevantes, como `409` e `415`;
 - confirma que OpenAPI, Swagger UI e Redoc permanecem autenticados.
-
-Após alterar um endpoint ou schema, atualize o snapshot e o Redoc e execute os testes e o lint.

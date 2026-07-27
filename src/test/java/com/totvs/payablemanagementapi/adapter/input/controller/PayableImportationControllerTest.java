@@ -112,6 +112,19 @@ class PayableImportationControllerTest {
     }
 
     @Test
+    void shouldRejectEmptyCsvFileWithDetails() throws Exception {
+        mockMvc.perform(multipart("/import/payable")
+                        .file(new MockMultipartFile(
+                                "file",
+                                "payables.csv",
+                                MediaType.TEXT_PLAIN_VALUE,
+                                new byte[0]
+                        )))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("O arquivo enviado está vazio"));
+    }
+
+    @Test
     void shouldRejectNonCsvFile() throws Exception {
         mockMvc.perform(multipart("/import/payable")
                         .file(new MockMultipartFile(

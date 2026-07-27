@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -239,13 +238,17 @@ public class PayableImportationController {
     }
 
     private void validateFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O arquivo é obrigatório");
+        if (file == null) {
+            throw new IllegalArgumentException("O arquivo é obrigatório");
+        }
+
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("O arquivo enviado está vazio");
         }
 
         String fileName = file.getOriginalFilename();
         if (fileName == null || !fileName.toLowerCase(Locale.ROOT).endsWith(".csv")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O arquivo deve ser CSV");
+            throw new IllegalArgumentException("O arquivo deve ser CSV");
         }
     }
 }
