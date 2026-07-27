@@ -9,8 +9,6 @@ public record PayableImportRabbitMqProperties(
         String exchange,
         String queue,
         String routingKey,
-        String deadLetterExchange,
-        String deadLetterQueue,
         Duration confirmationTimeout
 ) {
 }

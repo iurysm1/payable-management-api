@@ -21,22 +21,9 @@ public class PayableImportRabbitMqConfiguration {
         return new DirectExchange(properties.exchange());
     }
 
-    @Bean("payableImportDeadLetterExchange")
-    DirectExchange payableImportDeadLetterExchange(PayableImportRabbitMqProperties properties) {
-        return new DirectExchange(properties.deadLetterExchange());
-    }
-
     @Bean("payableImportQueue")
     Queue payableImportQueue(PayableImportRabbitMqProperties properties) {
-        return QueueBuilder.durable(properties.queue())
-                .deadLetterExchange(properties.deadLetterExchange())
-                .deadLetterRoutingKey(properties.queue())
-                .build();
-    }
-
-    @Bean("payableImportDeadLetterQueue")
-    Queue payableImportDeadLetterQueue(PayableImportRabbitMqProperties properties) {
-        return QueueBuilder.durable(properties.deadLetterQueue()).build();
+        return QueueBuilder.durable(properties.queue()).build();
     }
 
     @Bean
@@ -48,17 +35,6 @@ public class PayableImportRabbitMqConfiguration {
         return BindingBuilder.bind(payableImportQueue)
                 .to(payableImportExchange)
                 .with(properties.routingKey());
-    }
-
-    @Bean
-    Binding payableImportDeadLetterBinding(
-            @Qualifier("payableImportDeadLetterQueue") Queue payableImportDeadLetterQueue,
-            @Qualifier("payableImportDeadLetterExchange") DirectExchange payableImportDeadLetterExchange,
-            PayableImportRabbitMqProperties properties
-    ) {
-        return BindingBuilder.bind(payableImportDeadLetterQueue)
-                .to(payableImportDeadLetterExchange)
-                .with(properties.queue());
     }
 
     @Bean

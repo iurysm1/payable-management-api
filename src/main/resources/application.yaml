@@ -25,11 +25,6 @@ spring:
       mandatory: true
     listener:
       simple:
-        retry:
-          enabled: true
-          initial-interval: 1s
-          max-attempts: 3
-          max-interval: 10s
         default-requeue-rejected: false
 
 app:
@@ -43,8 +38,6 @@ app:
       exchange: payable.importation
       queue: payable.importation.requested
       routing-key: payable.importation.requested
-      dead-letter-exchange: payable.importation.dlx
-      dead-letter-queue: payable.importation.requested.dlq
       confirmation-timeout: 10s
 
 server:

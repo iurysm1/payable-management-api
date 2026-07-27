@@ -27,8 +27,6 @@ class RabbitMqPayableImportEventPublisherTest {
                 "payable.importation",
                 "payable.importation.requested",
                 "payable.importation.requested",
-                "payable.importation.dlx",
-                "payable.importation.requested.dlq",
                 Duration.ofSeconds(10)
         );
         RabbitMqPayableImportEventPublisher publisher = new RabbitMqPayableImportEventPublisher(
@@ -64,8 +62,6 @@ class RabbitMqPayableImportEventPublisherTest {
                 "payable.importation",
                 "payable.importation.requested",
                 "payable.importation.requested",
-                "payable.importation.dlx",
-                "payable.importation.requested.dlq",
                 Duration.ofSeconds(10)
         );
         RabbitMqPayableImportEventPublisher publisher = new RabbitMqPayableImportEventPublisher(
@@ -139,8 +135,6 @@ class RabbitMqPayableImportEventPublisherTest {
                 "payable.importation",
                 "payable.importation.requested",
                 "payable.importation.requested",
-                "payable.importation.dlx",
-                "payable.importation.requested.dlq",
                 confirmationTimeout
         );
     }
